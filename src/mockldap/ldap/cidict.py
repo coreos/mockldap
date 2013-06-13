@@ -1,0 +1,2 @@
+class cidict(dict):
+    pass

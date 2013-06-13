@@ -1,0 +1,3 @@
+This project contains a mock replacement for python-ldap. The basics were
+branched off from django-auth ldap. It's just a sketch so far, but perhaps it
+will grow into something useful.
