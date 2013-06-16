@@ -80,6 +80,13 @@ class LDAPObject(object):
     # Begin LDAP methods
     #
 
+    def get_option(self, option):
+        self._record_call('get_option', {
+            'option': option,
+        })
+
+        return self.options[option]
+
     def set_option(self, option, invalue):
         self._record_call('set_option', {
             'option': option,
