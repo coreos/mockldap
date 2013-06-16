@@ -199,7 +199,7 @@ class LDAPObject(object):
 
         if(who == '' and cred == ''):
             success = True
-        elif self._compare_s(who.lower(), 'userPassword', cred):
+        elif self._compare_s(who, 'userPassword', cred):
             success = True
 
         if success:
