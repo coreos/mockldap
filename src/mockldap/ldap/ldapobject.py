@@ -180,6 +180,9 @@ class LDAPObject(object):
     def unbind(self):
         pass
 
+    def unbind_s(self):
+        pass
+
     #
     # Internal implementations
     #
