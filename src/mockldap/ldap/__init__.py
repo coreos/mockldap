@@ -27,3 +27,6 @@ RES_SEARCH_RESULT = 101
 
 class PresetReturnRequiredError(Exception):
     pass
+
+
+OPT_X_TLS_DEMAND = False
