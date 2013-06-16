@@ -14,6 +14,10 @@ class NO_SUCH_ATTRIBUTE(LDAPError):
     pass
 
 
+class ALREADY_EXISTS(LDAPError):
+    pass
+
+
 SCOPE_BASE = 0
 SCOPE_ONELEVEL = 1
 SCOPE_SUBTREE = 2

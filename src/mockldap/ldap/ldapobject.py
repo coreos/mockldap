@@ -3,6 +3,7 @@ import cidict
 import ldap
 import re
 import sys
+import types
 try:
     from passlib.hash import ldap_md5_crypt
 except ImportError:
@@ -198,6 +199,19 @@ class LDAPObject(object):
 
         return result
 
+    def add_s(self, dn, record):
+        self._record_call('add_s', {
+            'dn': dn,
+            'record': record,
+        })
+
+        record = self._mangle_record(record)
+        result = self._get_return_value('add_s', (dn, record))
+        if result is None:
+            result = self._add_s(dn, record)
+
+        return result
+
     def unbind(self):
         pass
 
@@ -286,6 +300,18 @@ class LDAPObject(object):
 
         return results
 
+    def _add_s(self, dn, record):
+        entry = {}
+        dn = str(dn)
+        for item in record:
+            entry[item[0]] = list(item[1])
+        try:
+            self.directory[dn]
+            raise ALREADY_EXISTS
+        except KeyError:
+            self.directory[dn] = entry
+            return (105,[], len(self.calls), [])
+
     def _add_async_result(self, value):
         self.async_results.append(value)
 
@@ -318,3 +344,18 @@ class LDAPObject(object):
             raise value
 
         return value
+
+    def _mangle_record(self, record):
+        """Change lists into tuples, so that they can be hashed."""
+        new_record = []
+
+        for item in record:
+            key, value = item
+            if type(value) is types.ListType:
+                value = tuple(value)
+            new_record.append((key, value))
+
+        if type(new_record) is types.ListType:
+            new_record = tuple(new_record)
+
+        return new_record
