@@ -1,4 +1,6 @@
 from collections import defaultdict
+import cidict
+import ldap
 import re
 import sys
 
@@ -38,7 +40,7 @@ class LDAPObject(object):
             },
         }
         """
-        self.directory = self.cidict.cidict(directory)
+        self.directory = cidict.cidict(directory)
 
         self.reset()
 
@@ -139,7 +141,7 @@ class LDAPObject(object):
             'timeout': timeout,
         })
 
-        return self.RES_SEARCH_RESULT, self._pop_async_result(msgid)
+        return ldap.RES_SEARCH_RESULT, self._pop_async_result(msgid)
 
     def search_s(self, base, scope, filterstr='(objectClass=*)', attrlist=None, attrsonly=0):
         self._record_call('search_s', {
@@ -193,14 +195,14 @@ class LDAPObject(object):
         if success:
             return (97, []) # python-ldap returns this; I don't know what it means
         else:
-            raise self.INVALID_CREDENTIALS('%s:%s' % (who, cred))
+            raise ldap.INVALID_CREDENTIALS('%s:%s' % (who, cred))
 
     def _compare_s(self, dn, attr, value):
         if dn not in self.directory:
-            raise self.NO_SUCH_OBJECT
+            raise ldap.NO_SUCH_OBJECT
 
         if attr not in self.directory[dn]:
-            raise self.NO_SUCH_ATTRIBUTE
+            raise ldap.NO_SUCH_ATTRIBUTE
 
         return (value in self.directory[dn][attr]) and 1 or 0
 
@@ -213,7 +215,7 @@ class LDAPObject(object):
         valid_filterstr = re.compile(r'\(\w+=([\w@.]+|[*])\)')
 
         if not valid_filterstr.match(filterstr):
-            raise self.PresetReturnRequiredError('search_s("%s", %d, "%s", "%s", %d)' %
+            raise ldap.PresetReturnRequiredError('search_s("%s", %d, "%s", "%s", %d)' %
                 (base, scope, filterstr, attrlist, attrsonly))
 
         def get_results(dn, filterstr, results):
@@ -224,20 +226,20 @@ class LDAPObject(object):
 
         results = []
         all_dn = self.directory.keys()
-        if scope == self.SCOPE_BASE:
+        if scope == ldap.SCOPE_BASE:
             get_results(base, filterstr, results)
-        elif scope == self.SCOPE_ONELEVEL:
+        elif scope == ldap.SCOPE_ONELEVEL:
             for dn in all_dn:
                 if len(dn.split('=')) == len(base.split('=')) + 1 and dn.endswith(base):
                     get_results(dn, filterstr, results)
-        elif scope == self.SCOPE_SUBTREE:
+        elif scope == ldap.SCOPE_SUBTREE:
             for dn in all_dn:
                 if dn.endswith(base):
                     get_results(dn, filterstr, results)
         if results:
             return results
         else:
-            raise self.NO_SUCH_OBJECT()
+            raise ldap.NO_SUCH_OBJECT()
 
     def _add_async_result(self, value):
         self.async_results.append(value)
