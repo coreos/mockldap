@@ -126,6 +126,11 @@ class LDAPObject(object):
         return value
 
     def search(self, base, scope, filterstr='(objectClass=*)', attrlist=None, attrsonly=0):
+        try:
+            # attrlist is a python list, which is not hashable
+            attrlist = ','.join(attrlist)
+        except TypeError:
+            pass
         self._record_call('search', {
             'base': base,
             'scope': scope,
@@ -151,6 +156,11 @@ class LDAPObject(object):
         return ldap.RES_SEARCH_RESULT, self._pop_async_result(msgid)
 
     def search_s(self, base, scope, filterstr='(objectClass=*)', attrlist=None, attrsonly=0):
+        try:
+            # attrlist is a python list, which is not hashable
+            attrlist = ','.join(attrlist)
+        except TypeError:
+            pass
         self._record_call('search_s', {
             'base': base,
             'scope': scope,
@@ -219,7 +229,8 @@ class LDAPObject(object):
     def _search_s(self, base, scope, filterstr, attrlist, attrsonly):
         """
         We can do a search with a filter on the form (attr=value), where value
-        can be a string or *. Beyond that, you're on your own.
+        can be a string or *. attrlist and attrsonly are also supported.
+        Beyond that, you're on your own.
         """
 
         valid_filterstr = re.compile(r'\(\w+=([\w@.]+|[*])\)')
@@ -236,7 +247,14 @@ class LDAPObject(object):
             attrs = self.directory.get(dn)
             attr, value = filterstr[1:-1].split('=')
             if attrs and attr in attrs.keys() and str(value) in attrs[attr] or value == u'*':
-                results.append((dn, attrs))
+                new_attrs = attrs.copy()
+                if attrlist or attrsonly:
+                    for item in new_attrs.keys():
+                        if attrsonly:
+                            new_attrs[item] = []
+                        if attrlist and item not in attrlist.split(','):
+                            del(new_attrs[item])
+                results.append((dn, new_attrs))
 
         results = []
         all_dn = self.directory.keys()
