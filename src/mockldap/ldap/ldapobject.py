@@ -307,7 +307,7 @@ class LDAPObject(object):
             entry[item[0]] = list(item[1])
         try:
             self.directory[dn]
-            raise ALREADY_EXISTS
+            raise ldap.ALREADY_EXISTS
         except KeyError:
             self.directory[dn] = entry
             return (105,[], len(self.calls), [])

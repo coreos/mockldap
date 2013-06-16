@@ -1,0 +1,10 @@
+syntax: glob
+
+*.pyc
+*.coverage
+
+syntax: regexp
+
+^build
+^dist
+^mockldap.egg
