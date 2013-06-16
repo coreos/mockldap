@@ -228,6 +228,10 @@ class LDAPObject(object):
             raise ldap.PresetReturnRequiredError('search_s("%s", %d, "%s", "%s", %d)' %
                 (base, scope, filterstr, attrlist, attrsonly))
 
+        def check_dn(dn, all_dn):
+            if dn not in all_dn:
+                raise ldap.NO_SUCH_OBJECT
+
         def get_results(dn, filterstr, results):
             attrs = self.directory.get(dn)
             attr, value = filterstr[1:-1].split('=')
@@ -237,19 +241,20 @@ class LDAPObject(object):
         results = []
         all_dn = self.directory.keys()
         if scope == ldap.SCOPE_BASE:
+            check_dn(base, all_dn)
             get_results(base, filterstr, results)
         elif scope == ldap.SCOPE_ONELEVEL:
             for dn in all_dn:
+                check_dn(dn, all_dn)
                 if len(dn.split('=')) == len(base.split('=')) + 1 and dn.endswith(base):
                     get_results(dn, filterstr, results)
         elif scope == ldap.SCOPE_SUBTREE:
             for dn in all_dn:
+                check_dn(dn, all_dn)
                 if dn.endswith(base):
                     get_results(dn, filterstr, results)
-        if results:
-            return results
-        else:
-            raise ldap.NO_SUCH_OBJECT()
+
+        return results
 
     def _add_async_result(self, value):
         self.async_results.append(value)
