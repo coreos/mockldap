@@ -3,6 +3,10 @@ import cidict
 import ldap
 import re
 import sys
+try:
+    from passlib.hash import ldap_md5_crypt
+except ImportError:
+    pass
 
 
 class LDAPObject(object):
@@ -224,6 +228,14 @@ class LDAPObject(object):
         if attr not in self.directory[dn]:
             raise ldap.NO_SUCH_ATTRIBUTE
 
+        if attr == 'userPassword':
+            try:
+                # TODO: Implement more ldap pwd hashes from passlib
+                # http://pythonhosted.org/passlib/lib/passlib.hash.html#ldap-hashes
+                if ldap_md5_crypt.verify(value, self.directory[dn][attr][0]):
+                    return 1
+            except (NameError, ValueError):
+                pass
         return (value in self.directory[dn][attr]) and 1 or 0
 
     def _search_s(self, base, scope, filterstr, attrlist, attrsonly):

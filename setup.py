@@ -11,8 +11,9 @@ setup(
     author='Peter Sagerson',
     author_email='psagers.pypi@ignorare.net',
     license='BSD',
-    packages=['mockldap'],
-    package_dir={'': 'src'},
+    py_modules=['mockldap'],
+    packages=['mockldap', 'mockldap.ldap'],
+    package_dir={'': 'src/'},
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'Environment :: Web Environment',
@@ -26,6 +27,7 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
     keywords=['mock', 'ldap'],
-    install_requires=[
-    ],
+    extras_require={
+        'passlib': ['passlib>=1.6.1'],
+    },
 )
