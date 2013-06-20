@@ -30,7 +30,7 @@ class LDAPObject(object):
     ldap_methods_called() to get a record of all of the LDAP API calls that have
     been made, with or without arguments.
     """
-    def __init__(self, uri, trace_level=0, trace_file=sys.stdout, trace_stack_limit=None):
+    def __init__(self, directory):
         """
         directory is a complex structure with the entire contents of the
         mock LDAP directory. directory must be a dictionary mapping
@@ -45,7 +45,7 @@ class LDAPObject(object):
             },
         }
         """
-        self.directory = cidict.cidict(uri)
+        self.directory = cidict.cidict(directory)
 
         self.reset()
 
@@ -126,7 +126,7 @@ class LDAPObject(object):
 
         value = self._get_return_value('simple_bind_s', (who, cred))
         if value is None:
-            value = self._simple_bind_s(who, cred)
+            value = self._simple_bind_s(who.lower(), cred)
 
         return value
 
