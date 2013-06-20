@@ -27,6 +27,9 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
     keywords=['mock', 'ldap'],
+    install_requires=[
+        'python-ldap>=2.4.10',
+    ],
     extras_require={
         'passlib': ['passlib>=1.6.1'],
     },
