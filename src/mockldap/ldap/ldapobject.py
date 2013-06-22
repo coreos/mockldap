@@ -1,5 +1,4 @@
 from collections import defaultdict
-import cidict
 import ldap
 import re
 import sys
@@ -45,7 +44,7 @@ class LDAPObject(object):
             },
         }
         """
-        self.directory = cidict.cidict(directory)
+        self.directory = ldap.cidict.cidict(directory)
 
         self.reset()
 

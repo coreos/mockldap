@@ -1,2 +1,0 @@
-class cidict(dict):
-    pass
