@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from setuptools import setup
 
 setup(
     name='mockldap',
@@ -11,11 +11,10 @@ setup(
     author='Peter Sagerson',
     author_email='psagers.pypi@ignorare.net',
     license='BSD',
-    py_modules=['mockldap'],
-    packages=['mockldap', 'mockldap.ldap'],
+    packages=['mockldap.ldap'],
     package_dir={'': 'src/'},
     classifiers=[
-        'Development Status :: 5 - Production/Stable',
+        'Development Status :: 2 - Pre-Alpha',
         'Environment :: Web Environment',
         'Programming Language :: Python',
         'Framework :: Django',
@@ -33,4 +32,7 @@ setup(
     extras_require={
         'passlib': ['passlib>=1.6.1'],
     },
+    setup_requires=[
+        'setuptools>=0.6c11',
+    ],
 )
