@@ -11,6 +11,11 @@ except ImportError:
 from .recording import RecordableMethods, recorded
 
 
+class SeedRequired(Exception):
+    """ An API call must be seeded with a return value. """
+    pass
+
+
 class LDAPObject(RecordableMethods):
     """
     Simple operations can be simulated, but for nontrivial searches, the client
@@ -25,7 +30,7 @@ class LDAPObject(RecordableMethods):
     return value based on the arguments received. If it finds one, then it
     returns it, or raises it if it's an Exception. If it doesn't find one, then
     it tries to satisfy the request internally. If it can't, it raises a
-    PresetReturnRequiredError.
+    SeedRequired.
 
     At any time, the client may call ldap_methods_called_with_arguments() or
     ldap_methods_called() to get a record of all of the LDAP API calls that have
@@ -146,7 +151,7 @@ class LDAPObject(RecordableMethods):
         valid_filterstr = re.compile(r'\(\w+=([\w@.]+|[*])\)')
 
         if not valid_filterstr.match(filterstr):
-            raise ldap.PresetReturnRequiredError('search_s("%s", %d, "%s", "%s", %d)' %
+            raise SeedRequired('search_s("%s", %d, "%s", "%s", %d)' %
                 (base, scope, filterstr, attrlist, attrsonly))
 
         def check_dn(dn, all_dn):

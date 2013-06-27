@@ -27,10 +27,11 @@ setup(
     ],
     keywords=['mock', 'ldap'],
     install_requires=[
-        'python-ldap>=2.4.10',
+        'python-ldap',
     ],
     extras_require={
         'passlib': ['passlib>=1.6.1'],
+        'mock': ['mock'],
     },
     setup_requires=[
         'setuptools>=0.6c11',

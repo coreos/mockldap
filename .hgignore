@@ -6,5 +6,6 @@ mockldap.egg-info
 
 syntax: regexp
 
-^build
-^dist
+^build/
+^dist/
+^docs/build/

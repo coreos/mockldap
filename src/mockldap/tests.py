@@ -130,11 +130,11 @@ class TestMockLdap(unittest.TestCase):
         self.assertRaises(ValueError, lambda: self.mockldap.stop())
 
     def test_stop_penultimate(self):
-        conn = self.mockldap.start()
+        self.mockldap.start()
         self.mockldap.start('mockldap.tests.initialize')
         self.mockldap.stop()
 
-        self.assertEqual(self.mockldap[''], conn)
+        self.assert_(self.mockldap[''] is not None)
 
     def test_stop_last(self):
         self.mockldap.start()
@@ -144,17 +144,10 @@ class TestMockLdap(unittest.TestCase):
 
         self.assertRaises(KeyError, lambda: self.mockldap[''])
 
-    def test_get_default(self):
-        conn = self.mockldap.start()
-
-        self.assertEqual(conn, self.mockldap[''])
-        self.assertEqual(conn.methods_called(), [])
-
     def test_initialize(self):
-        default = self.mockldap.start()
+        self.mockldap.start()
         conn = ldap.initialize('ldap:///')
 
-        self.assertEqual(default, conn)
         self.assertEqual(conn.methods_called(), ['initialize'])
 
     def test_no_default(self):
@@ -162,3 +155,8 @@ class TestMockLdap(unittest.TestCase):
         mockldap.start()
 
         self.assertRaises(KeyError, lambda: mockldap[''])
+
+    def test_indepdendent_connections(self):
+        self.mockldap.start()
+
+        self.assertNotEqual(self.mockldap['foo'], self.mockldap['bar'])

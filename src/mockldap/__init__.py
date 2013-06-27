@@ -1,3 +1,8 @@
+from collections import defaultdict
+
+from .ldapobject import LDAPObject, SeedRequired
+
+
 URI_DEFAULT = '__default__'
 
 
@@ -17,14 +22,7 @@ class MockLdap(object):
         if self.ldap_objects is None:
             raise KeyError("You must call start() before asking for mock LDAP objects.")
 
-        ldap_object = self.ldap_objects.get(uri)
-        if ldap_object is None:
-            ldap_object = self.ldap_objects.get(URI_DEFAULT)
-
-        if ldap_object is None:
-            raise KeyError("No mock LDAP directory provided for {0!r}".format(uri))
-
-        return ldap_object
+        return self.ldap_objects[uri]
 
     def add_directory(self, directory, uri=URI_DEFAULT):
         self.directories[uri] = directory
@@ -34,22 +32,25 @@ class MockLdap(object):
         Patch ldap.initialize() to return mock LDAPObject instances.
         """
         from mock import patch
-        from .ldapobject import LDAPObject
 
         if path in self.patchers:
             raise ValueError("{0!r} is already patched.".format(path))
 
         if self.ldap_objects is None:
-            self.ldap_objects = map_values(LDAPObject, self.directories)
+            ldap_objects = map_values(LDAPObject, self.directories)
+            self.ldap_objects = defaultdict(self._new_ldap_object, ldap_objects)
 
         patcher = patch(path, new_callable=lambda: self.initialize)
         patcher.start()
         self.patchers[path] = patcher
 
+    def _new_ldap_object(self):
+        from .ldapobject import LDAPObject
+
         try:
-            return self[URI_DEFAULT]
+            return LDAPObject(self.directories[URI_DEFAULT])
         except KeyError:
-            return None
+            raise KeyError("No default mock LDAP content provided")
 
     def stop(self, path='ldap.initialize'):
         if path not in self.patchers:
