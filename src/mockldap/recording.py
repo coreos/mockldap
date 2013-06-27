@@ -50,7 +50,9 @@ class recorded(object):
     7
     >>> c.plus1(4)
     5
-    >>> c._recorded_calls
+    >>> c.methods_called()
+    ['plus1', 'plus1', 'plus1']
+    >>> c.methods_called(with_args=True)
     [('plus1', (5,), {}), ('plus1', (5,), {}), ('plus1', (4,), {})]
     >>> c = C()
     >>> c.plus1.seed(n=5)(8)
@@ -58,7 +60,7 @@ class recorded(object):
     6
     >>> c.plus1(n=5)
     8
-    >>> c._recorded_calls
+    >>> c.methods_called(with_args=True)
     [('plus1', (5,), {}), ('plus1', (), {'n': 5})]
     >>> c = C()
     >>> c.plus1.seed(5)(9)
