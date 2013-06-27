@@ -1,0 +1,164 @@
+from __future__ import absolute_import
+
+from doctest import DocTestSuite
+try:
+    import unittest2 as unittest
+except ImportError:
+    import unittest
+
+import ldap
+
+from . import MockLdap
+from .ldapobject import LDAPObject
+
+
+def load_tests(loader, tests, pattern):
+    suite = unittest.TestSuite()
+
+    suite.addTests(tests)
+    suite.addTest(DocTestSuite('mockldap.recording'))
+
+    return suite
+
+
+class TestLDAPObject(unittest.TestCase):
+    directory = {
+        "cn=Manager,ou=example,o=test": {
+            "userPassword": ["ldaptest"],
+        },
+        "cn=alice,ou=example,o=test": {
+            "userPassword": ["alicepw"],
+        },
+        "cn=bob,ou=other,o=test": {
+            "userPassword": ["bobpw"],
+        },
+    }
+
+    def setUp(self):
+        self.ldap = LDAPObject(self.directory)
+
+    def test_set_option(self):
+        self.ldap.set_option(ldap.OPT_X_TLS_DEMAND, True)
+        self.assertEqual(self.ldap.get_option(ldap.OPT_X_TLS_DEMAND), True)
+
+    def test_simple_bind_s_success(self):
+        self.assertEqual(self.ldap.simple_bind_s("cn=alice,ou=example,o=test", "alicepw"), (97, []))
+
+    def test_simple_bind_s_success_case_insensitive(self):
+        self.assertEqual(self.ldap.simple_bind_s("cn=manager,ou=Example,o=test", "ldaptest"), (97, []))
+
+    def test_fail_anon_simple_bind_s(self):
+        self.assertEqual(self.ldap.simple_bind_s(), (97, []))
+
+    def test_simple_bind_s_raise_no_such_object(self):
+        self.assertRaises(ldap.NO_SUCH_OBJECT, self.ldap.simple_bind_s, "cn=blah,o=test", "password")
+
+    def test_simple_bind_s_fail_login(self):
+        self.assertRaises(ldap.INVALID_CREDENTIALS, self.ldap.simple_bind_s, "cn=alice,ou=example,o=test", "wrong")
+
+    def test_search_s_get_directory_items_with_scope_onelevel(self):
+        result = []
+        for key, attrs in self.directory.iteritems():
+            if key.endswith("ou=example,o=test"):
+                result.append((key, attrs))
+        self.assertEqual(self.ldap.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL, '(cn=*)'), result)
+
+    def test_search_s_get_all_directory_items_with_scope_subtree(self):
+        result = []
+        for key, attrs in self.directory.iteritems():
+            if key.endswith("o=test"):
+                result.append((key, attrs))
+        self.assertEqual(self.ldap.search_s("o=test", ldap.SCOPE_SUBTREE, '(cn=*)'), result)
+
+    def test_search_s_get_specific_item_with_scope_base(self):
+        result = [("cn=alice,ou=example,o=test", self.directory["cn=alice,ou=example,o=test"])]
+        self.assertEqual(self.ldap.search_s("cn=alice,ou=example,o=test", ldap.SCOPE_BASE), result)
+
+    def test_search_s_get_specific_attr(self):
+        result = [("cn=alice,ou=example,o=test", {"userPassword": ["alicepw"]})]
+        self.assertEqual(self.ldap.search_s("cn=alice,ou=example,o=test", ldap.SCOPE_BASE, attrlist=["userPassword"]), result)
+
+    def test_search_s_use_attrsonly(self):
+        result = [("cn=alice,ou=example,o=test", {"userPassword": []})]
+        self.assertEqual(self.ldap.search_s("cn=alice,ou=example,o=test", ldap.SCOPE_BASE, attrlist=["userPassword"], attrsonly=1), result)
+
+    def test_search_s_scope_base_no_such_object(self):
+        self.assertRaises(ldap.NO_SUCH_OBJECT, self.ldap.search_s, "cn=blah,ou=example,o=test", ldap.SCOPE_BASE)
+
+    def test_search_s_empty_list(self):
+        self.assertEqual(self.ldap.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL, '(uid=blah)'), [])
+
+
+def initialize(*args, **kwargs):
+    """ Dummy patch target for the tests below. """
+    pass
+
+
+class TestMockLdap(unittest.TestCase):
+    directory = {
+        "cn=Manager,ou=example,o=test": {
+            "userPassword": ["ldaptest"],
+        },
+        "cn=alice,ou=example,o=test": {
+            "userPassword": ["alicepw"],
+        },
+        "cn=bob,ou=other,o=test": {
+            "userPassword": ["bobpw"],
+        },
+    }
+
+    @classmethod
+    def setUpClass(cls):
+        cls.mockldap = MockLdap(cls.directory)
+
+    @classmethod
+    def tearDownClass(cls):
+        del cls.mockldap
+
+    def tearDown(self):
+        self.mockldap.stop_all()
+
+    def test_uninitialized(self):
+        self.assertRaises(KeyError, lambda: self.mockldap[''])
+
+    def test_duplicate_patch(self):
+        self.mockldap.start()
+
+        self.assertRaises(ValueError, lambda: self.mockldap.start())
+
+    def test_unbalanced_stop(self):
+        self.assertRaises(ValueError, lambda: self.mockldap.stop())
+
+    def test_stop_penultimate(self):
+        conn = self.mockldap.start()
+        self.mockldap.start('mockldap.tests.initialize')
+        self.mockldap.stop()
+
+        self.assertEqual(self.mockldap[''], conn)
+
+    def test_stop_last(self):
+        self.mockldap.start()
+        self.mockldap.start('mockldap.tests.initialize')
+        self.mockldap.stop()
+        self.mockldap.stop('mockldap.tests.initialize')
+
+        self.assertRaises(KeyError, lambda: self.mockldap[''])
+
+    def test_get_default(self):
+        conn = self.mockldap.start()
+
+        self.assertEqual(conn, self.mockldap[''])
+        self.assertEqual(conn.methods_called(), [])
+
+    def test_initialize(self):
+        default = self.mockldap.start()
+        conn = ldap.initialize('ldap:///')
+
+        self.assertEqual(default, conn)
+        self.assertEqual(conn.methods_called(), ['initialize'])
+
+    def test_no_default(self):
+        mockldap = MockLdap()
+        mockldap.start()
+
+        self.assertRaises(KeyError, lambda: mockldap[''])

@@ -11,7 +11,7 @@ setup(
     author='Peter Sagerson',
     author_email='psagers.pypi@ignorare.net',
     license='BSD',
-    packages=['mockldap.ldap'],
+    packages=['mockldap'],
     package_dir={'': 'src/'},
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
@@ -35,4 +35,5 @@ setup(
     setup_requires=[
         'setuptools>=0.6c11',
     ],
+    test_suite='mockldap.tests',
 )
