@@ -9,6 +9,13 @@ URI_DEFAULT = '__default__'
 class MockLdap(object):
     """
     Top-level class managing directories and patches.
+
+    :param directory: Default directory contents.
+
+    After calling :meth:`~mockldap.MockLdap.start`, ``mockldap[uri]`` returns
+    an :class:`~mockldap.ldapobject.LDAPObject`. This is the same object that
+    will be returned by ``ldap.initialize(uri)``, so you can use it to seed
+    return values and discover which APIs were called.
     """
     def __init__(self, directory=None):
         self.directories = {}
@@ -16,7 +23,7 @@ class MockLdap(object):
         self.patchers = {}
 
         if directory is not None:
-            self.add_directory(directory)
+            self.set_directory(directory)
 
     def __getitem__(self, uri):
         if self.ldap_objects is None:
@@ -24,12 +31,44 @@ class MockLdap(object):
 
         return self.ldap_objects[uri]
 
-    def add_directory(self, directory, uri=URI_DEFAULT):
+    def set_directory(self, directory, uri=URI_DEFAULT):
+        """
+        Set the mock LDAP content for a given URI.
+
+        :param uri: The LDAP URI to associate this content with.
+        :type uri: string
+
+        If URI is not given, this will set the default content for all unknown
+        URIs.
+        """
+        if self.ldap_objects is not None:
+            raise Exception("You can't add a directory after calling start().")
+
         self.directories[uri] = directory
 
     def start(self, path='ldap.initialize'):
         """
-        Patch ldap.initialize() to return mock LDAPObject instances.
+        Patch :func:`ldap.initialize` to return mock LDAPObject instances. This
+        calls :func:`mock.patch`, so you must have the `mock
+        <https://pypi.python.org/pypi/mock/>`_ library installed.
+
+        :param path: The module path to ``ldap.initialize``.
+        :type path: string
+
+        If the code under test looks like::
+
+            import ldap
+            ...
+            ldap.initialize(uri)
+
+        then you can use the default value of path. If the code reads::
+
+            from ldap import initialize
+            ...
+            initialize(uri)
+
+        then you need to call ``start('path.to.your.mod.initialize')``. See
+        :ref:`where-to-patch` for more.
         """
         from mock import patch
 
@@ -53,8 +92,16 @@ class MockLdap(object):
             raise KeyError("No default mock LDAP content provided")
 
     def stop(self, path='ldap.initialize'):
+        """
+        Stop patching :func:`ldap.initialize`.
+
+        Calls to :meth:`~mockldap.MockLdap.start` and
+        :meth:`~mockldap.MockLdap.stop` must be balanced. After the final call
+        to stop, we'll reset all :class:`~mockldap.ldapobject.LDAPObject`
+        instances.
+        """
         if path not in self.patchers:
-            raise ValueError("{0!r} has not been patched.".format(path))
+            raise ValueError("{0!r} is not patched.".format(path))
 
         self.patchers[path].stop()
         del self.patchers[path]
@@ -63,6 +110,12 @@ class MockLdap(object):
             self.ldap_objects = None
 
     def stop_all(self):
+        """
+        Remove all patches and reset our state.
+
+        If you called :meth:`~mockldap.MockLdap.start` multiple times, this is
+        the easiest way to reset everything.
+        """
         for patcher in self.patchers.itervalues():
             patcher.stop()
 
@@ -70,10 +123,6 @@ class MockLdap(object):
         self.ldap_objects = None
 
     def initialize(self, uri, *args, **kwargs):
-        """
-        A mock replacement for ldap.initialize(). This returns one of our
-        LDAPObject instances.
-        """
         ldap_object = self[uri]
 
         # For recording purposes only.

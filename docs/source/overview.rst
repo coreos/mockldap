@@ -8,11 +8,14 @@ Your assertions would then verify that the tested code behaved correctly given
 this set of return values from the LDAP APIs.
 
 As a convenience, the mock LDAPObject isn't just a dumb mock object. The typical
-way to use mockldap is to provide some static directory content and then let the
-mock LDAPObject generate real return values. This will only work for simple LDAP
-operations--this obviously isn't a complete Python LDAP server
-implementation--but those simple operations tend to cover a lot of cases.
+way to use mockldap is to provide some static directory content and then let
+:class:`~mockldap.ldapobject.LDAPObject` generate real return values. This will
+only work for simple LDAP operations--this obviously isn't a complete Python
+LDAP server implementation--but those simple operations tend to cover a lot of
+cases.
 
+
+.. _example:
 
 Example
 -------

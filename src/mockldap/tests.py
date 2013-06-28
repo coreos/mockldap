@@ -95,17 +95,11 @@ def initialize(*args, **kwargs):
 
 
 class TestMockLdap(unittest.TestCase):
-    directory = {
-        "cn=Manager,ou=example,o=test": {
-            "userPassword": ["ldaptest"],
-        },
-        "cn=alice,ou=example,o=test": {
-            "userPassword": ["alicepw"],
-        },
-        "cn=bob,ou=other,o=test": {
-            "userPassword": ["bobpw"],
-        },
-    }
+    manager = ("cn=Manager,ou=example,o=test", {"userPassword": ["ldaptest"]})
+    alice = ("cn=alice,ou=example,o=test", {"userPassword": ["alicepw"]})
+    bob = ("cn=bob,ou=other,o=test", {"userPassword": ["bobpw"]})
+
+    directory = dict([manager, alice, bob])
 
     @classmethod
     def setUpClass(cls):
@@ -149,6 +143,14 @@ class TestMockLdap(unittest.TestCase):
         conn = ldap.initialize('ldap:///')
 
         self.assertEqual(conn.methods_called(), ['initialize'])
+
+    def test_specific_content(self):
+        directory = dict([self.alice, self.bob])
+        self.mockldap.set_directory(directory, uri='ldap://example.com/')
+        self.mockldap.start()
+        conn = ldap.initialize('ldap://example.com/')
+
+        self.assertEqual(conn.directory, directory)
 
     def test_no_default(self):
         mockldap = MockLdap()

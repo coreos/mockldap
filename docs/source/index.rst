@@ -7,9 +7,12 @@ mockldap
     :maxdepth: 2
 
     overview
+    directories
+    operations
+    changes
 
 
-Integration
------------
+License
+-------
 
-The easiest way to 
+.. include:: ../../LICENSE
