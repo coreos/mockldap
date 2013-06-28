@@ -2,10 +2,9 @@ Mock Directories
 ================
 
 The first step to using mockldap is to define some static LDAP content and
-install it as a mock :class:`~mockldap.ldapobject.LDAPObject`. For this, you
-will use :class:`mockldap.MockLdap`. Only one instance of this class should
-exist at a time; :meth:`~unittest.TestCase.setUpClass` is a good place to
-instantiate it.
+install it as a mock :class:`~mockldap.LDAPObject`. For this, you will use
+:class:`mockldap.MockLdap`. Only one instance of this class should exist at a
+time; :meth:`~unittest.TestCase.setUpClass` is a good place to instantiate it.
 
 :class:`~mockldap.MockLdap` can mock multiple LDAP directories, identified by
 URI. You can provide directory content for URIs individually and you can also
@@ -57,9 +56,9 @@ For each test:
       :func:`ldap.initialize`. You may need to call this multiple times if
       :func:`~ldap.initialize` is accessed by multiple names.
     - Any time during your test, you can access an individual
-      :class:`~mockldap.ldapobject.LDAPObject` as ``mockldap[uri]``. This will
-      let you seed return values for LDAP operations and recover the record of
-      which operations were performed.
+      :class:`~mockldap.LDAPObject` as ``mockldap[uri]``. This will let you seed
+      return values for LDAP operations and recover the record of which
+      operations were performed.
     - After the test, call :meth:`~mockldap.MockLdap.stop` or
       :meth:`~mockldap.MockLdap.stop_all`.
 

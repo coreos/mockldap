@@ -5,6 +5,17 @@ from collections import defaultdict
 from copy import deepcopy
 from functools import partial
 from itertools import ifilter
+import types
+
+
+class SeedRequired(Exception):
+    """
+    An API call must be seeded with a return value.
+
+    This is raised by :class:`~mockldap.LDAPObject` methods when they can't
+    satisfy a request internally.
+    """
+    pass
 
 
 class RecordableMethods(object):
@@ -67,6 +78,16 @@ class recorded(object):
     >>> c.plus1.seed(5)(10)
     >>> c.plus1(5)
     10
+    >>> c.plus1.seed(5)(ValueError())
+    >>> c.plus1(5)
+    Traceback (most recent call last):
+        ...
+    ValueError
+    >>> c.plus1.seed(5)(ValueError)
+    >>> c.plus1(5)
+    Traceback (most recent call last):
+        ...
+    ValueError
     """
     def __init__(self, func):
         self.func = func
@@ -74,12 +95,12 @@ class recorded(object):
     def __get__(self, instance, owner):
         func = self.func
         if instance is not None:
-            func = _Bound(self.func, instance)
+            func = RecordedMethod(self.func, instance)
 
         return func
 
 
-class _Bound(object):
+class RecordedMethod(object):
     def __init__(self, func, instance):
         self.func = func
         self.instance = instance
@@ -91,13 +112,43 @@ class _Bound(object):
             value = next(self._seeded_values(args, kwargs))[1]
         except StopIteration:
             value = self.func(self.instance, *args, **kwargs)
+        else:
+            if isinstance(value, Exception):
+                raise value
+            elif isinstance(value, types.TypeType) and issubclass(value, Exception):
+                raise value()
 
         return value
 
     def seed(self, *args, **kwargs):
+        """
+        A convenience wrapper for
+        :meth:`~mockldap.recording.RecordedMethod.set_return_value`.
+
+        ``method.seed(arg1, arg2=True)(value)`` is equivalent to
+        ``method.set_return_value([arg1], {'arg2': True}, value)``.
+        """
         return partial(self.set_return_value, args, kwargs)
 
     def set_return_value(self, args, kwargs, value):
+        """
+        Set a method's return value for a set of arguments.
+
+        Subsequent calls to this method will check for a matching set of
+        arguments and return the assoiated value. If the value is an exception
+        class or instance, it will be raised instead.
+
+        .. warning::
+
+            When the method is called, the arguments must be passed in exactly
+            the same form. We don't automatically match equivalent positional
+            and keyword arguments.
+
+        If no preset return value is found, the underlying method will be
+        called normally. If that method can not handle the request, it may
+        raise :exc:`mockldap.SeedRequired`, indicating that the method must be
+        seeded with a return value for these arguments.
+        """
         self._seeded_calls.insert(0, ((deepcopy(args), deepcopy(kwargs)), deepcopy(value)))
 
     def _record(self, args, kwargs):

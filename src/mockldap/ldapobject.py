@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+from copy import deepcopy
 import re
 
 import ldap
@@ -8,65 +9,45 @@ try:
 except ImportError:
     pass
 
-from .recording import RecordableMethods, recorded
-
-
-class SeedRequired(Exception):
-    """ An API call must be seeded with a return value. """
-    pass
+from .recording import SeedRequired, RecordableMethods, recorded
 
 
 class LDAPObject(RecordableMethods):
     """
-    Simple operations can be simulated, but for nontrivial searches, the client
-    will have to seed the mock object with return values for expected API calls.
-    This may sound like cheating, but it's really no more so than a simulated
-    LDAP server. The fact is we can not require python-ldap to be installed in
-    order to run the unit tests, so all we can do is verify that LDAPBackend is
-    calling the APIs that we expect.
+    :param directory: The initial content of this LDAP connection.
+    :type directory: ``{dn: {attr: [values]}}``
 
-    set_return_value takes the name of an API, a tuple of arguments, and a
-    return value. Every time an API is called, it looks for a predetermined
-    return value based on the arguments received. If it finds one, then it
-    returns it, or raises it if it's an Exception. If it doesn't find one, then
-    it tries to satisfy the request internally. If it can't, it raises a
-    SeedRequired.
+    Our mock replacement for :class:`ldap.LDAPObject`. This exports selected
+    LDAP operations and allows you to set return values in advance as well as
+    discover which methods were called after the fact.
 
-    At any time, the client may call ldap_methods_called_with_arguments() or
-    ldap_methods_called() to get a record of all of the LDAP API calls that have
-    been made, with or without arguments.
+    All of these methods take the same arguments as their python-ldap
+    counterparts. Some are self-explanatory; those that are only partially
+    implemented are documented as such.
+
+    .. attribute:: options
+
+        *dict*: Options that have been set by
+        :meth:`~mockldap.LDAPObject.set_option`.
+
+    .. attribute:: tls_enabled
+
+        *bool*: True if :meth:`~mockldap.LDAPObject.start_tls_s` was called.
+
+    .. attribute:: bound_as
+
+        *string*: DN of the last successful bind. None if unbound.
     """
     def __init__(self, directory):
-        """
-        directory is a complex structure with the entire contents of the
-        mock LDAP directory. directory must be a dictionary mapping
-        distinguished names to dictionaries of attributes. Each attribute
-        dictionary maps attribute names to lists of values. e.g.:
-
-        {
-            "uid=alice,ou=users,dc=example,dc=com":
-            {
-                "uid": ["alice"],
-                "userPassword": ["secret"],
-            },
-        }
-        """
-        self.directory = ldap.cidict.cidict(directory)
+        self.directory = ldap.cidict.cidict(deepcopy(directory))
         self.async_results = []
         self.options = {}
         self.tls_enabled = False
+        self.bound_as = None
 
     #
     # Begin LDAP methods
     #
-
-    @recorded
-    def get_option(self, option):
-        return self.options[option]
-
-    @recorded
-    def set_option(self, option, invalue):
-        self.options[option] = invalue
 
     @recorded
     def initialize(self, *args, **kwargs):
@@ -74,7 +55,21 @@ class LDAPObject(RecordableMethods):
         pass
 
     @recorded
+    def get_option(self, option):
+        """
+        """
+        return self.options[option]
+
+    @recorded
+    def set_option(self, option, invalue):
+        """
+        """
+        self.options[option] = invalue
+
+    @recorded
     def simple_bind_s(self, who='', cred=''):
+        """
+        """
         success = False
 
         if(who == '' and cred == ''):
@@ -83,43 +78,66 @@ class LDAPObject(RecordableMethods):
             success = True
 
         if success:
+            self.bound_as = who
             return (97, []) # python-ldap returns this; I don't know what it means
         else:
             raise ldap.INVALID_CREDENTIALS('%s:%s' % (who, cred))
 
     @recorded
     def search(self, base, scope, filterstr='(objectClass=*)', attrlist=None, attrsonly=0):
+        """
+        Implements searching with simple filters of the form (attr=value),
+        where value can be a string or *. attrlist and attrsonly are also
+        supported. Beyond that, this method must be seeded.
+        """
         value = self._search_s(base, scope, filterstr, attrlist, attrsonly)
 
         return self._add_async_result(value)
 
     @recorded
     def result(self, msgid, all=1, timeout=None):
+        """
+        """
         return ldap.RES_SEARCH_RESULT, self._pop_async_result(msgid)
 
     @recorded
     def search_s(self, base, scope, filterstr='(objectClass=*)', attrlist=None, attrsonly=0):
+        """
+        Implements searching with simple filters of the form (attr=value),
+        where value can be a string or *. attrlist and attrsonly are also
+        supported. Beyond that, this method must be seeded.
+        """
         return self._search_s(base, scope, filterstr, attrlist, attrsonly)
 
     @recorded
     def start_tls_s(self):
+        """
+        """
         self.tls_enabled = True
 
     @recorded
     def compare_s(self, dn, attr, value):
+        """
+        """
         return self._compare_s(dn, attr, value)
 
     @recorded
     def add_s(self, dn, record):
+        """
+        """
         return self._add_s(dn, record)
 
     @recorded
     def unbind(self):
-        pass
+        """
+        """
+        self.bound_as = None
 
     @recorded
     def unbind_s(self):
-        pass
+        """
+        """
+        self.bound_as = None
 
     #
     # Internal implementations
@@ -143,11 +161,6 @@ class LDAPObject(RecordableMethods):
         return (value in self.directory[dn][attr]) and 1 or 0
 
     def _search_s(self, base, scope, filterstr, attrlist, attrsonly):
-        """
-        We can do a search with a filter on the form (attr=value), where value
-        can be a string or *. attrlist and attrsonly are also supported.
-        Beyond that, you're on your own.
-        """
         valid_filterstr = re.compile(r'\(\w+=([\w@.]+|[*])\)')
 
         if not valid_filterstr.match(filterstr):
@@ -199,7 +212,7 @@ class LDAPObject(RecordableMethods):
             raise ldap.ALREADY_EXISTS
         except KeyError:
             self.directory[dn] = entry
-            return (105, [], len(self.calls), [])
+            return (105, [], len(self.methods_called()), [])
 
     #
     # Async

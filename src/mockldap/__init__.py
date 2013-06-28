@@ -1,6 +1,7 @@
 from collections import defaultdict
 
-from .ldapobject import LDAPObject, SeedRequired
+from .ldapobject import LDAPObject
+from .recording import SeedRequired  # NOQA
 
 
 URI_DEFAULT = '__default__'
@@ -13,9 +14,9 @@ class MockLdap(object):
     :param directory: Default directory contents.
 
     After calling :meth:`~mockldap.MockLdap.start`, ``mockldap[uri]`` returns
-    an :class:`~mockldap.ldapobject.LDAPObject`. This is the same object that
-    will be returned by ``ldap.initialize(uri)``, so you can use it to seed
-    return values and discover which APIs were called.
+    an :class:`~mockldap.LDAPObject`. This is the same object that will be
+    returned by ``ldap.initialize(uri)``, so you can use it to seed return
+    values and discover which APIs were called.
     """
     def __init__(self, directory=None):
         self.directories = {}
@@ -97,8 +98,7 @@ class MockLdap(object):
 
         Calls to :meth:`~mockldap.MockLdap.start` and
         :meth:`~mockldap.MockLdap.stop` must be balanced. After the final call
-        to stop, we'll reset all :class:`~mockldap.ldapobject.LDAPObject`
-        instances.
+        to stop, we'll reset all :class:`~mockldap.LDAPObject` instances.
         """
         if path not in self.patchers:
             raise ValueError("{0!r} is not patched.".format(path))

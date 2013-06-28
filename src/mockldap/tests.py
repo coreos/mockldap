@@ -162,3 +162,15 @@ class TestMockLdap(unittest.TestCase):
         self.mockldap.start()
 
         self.assertNotEqual(self.mockldap['foo'], self.mockldap['bar'])
+
+    def test_volatile_modification(self):
+        self.mockldap.start()
+        conn1 = ldap.initialize('')
+        conn1.directory['cn=alice,ou=example,o=test']['userPassword'][0] = 'modified'
+        self.mockldap.stop()
+
+        self.mockldap.start()
+        conn2 = ldap.initialize('')
+        self.mockldap.stop()
+
+        self.assertNotEqual(conn1.directory, conn2.directory)
