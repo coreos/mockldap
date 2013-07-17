@@ -53,14 +53,14 @@ class TestLDAPObject(unittest.TestCase):
 
     def test_search_s_get_directory_items_with_scope_onelevel(self):
         result = []
-        for key, attrs in directory.iteritems():
+        for key, attrs in directory.items():
             if key.endswith("ou=example,o=test"):
                 result.append((key, attrs))
         self.assertEqual(self.ldap.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL, '(cn=*)'), result)
 
     def test_search_s_get_all_directory_items_with_scope_subtree(self):
         result = []
-        for key, attrs in directory.iteritems():
+        for key, attrs in directory.items():
             if key.endswith("o=test"):
                 result.append((key, attrs))
         self.assertEqual(self.ldap.search_s("o=test", ldap.SCOPE_SUBTREE, '(cn=*)'), result)

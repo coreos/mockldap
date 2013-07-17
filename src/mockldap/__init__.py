@@ -132,4 +132,4 @@ class MockLdap(object):
 
 
 # Map a dictionary by applying a function to each value.
-map_values = lambda f, d: dict((k, f(v)) for k, v in d.iteritems())
+map_values = lambda f, d: dict((k, f(v)) for k, v in d.items())
