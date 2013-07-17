@@ -14,9 +14,12 @@ from .ldapobject import LDAPObject
 
 manager = ("cn=Manager,ou=example,o=test", {"userPassword": ["ldaptest"]})
 alice = ("cn=alice,ou=example,o=test", {"userPassword": ["alicepw"]})
-bob = ("cn=bob,ou=other,o=test", {"userPassword": ["bobpw"]})
+bob = ("cn=bob,ou=other,o=test", {"userPassword": ["bobpw", "bobpw2"]})
+theo = ("cn=theo,ou=example,o=test", {"userPassword": [
+    "{CRYPT}$1$95Aqvh4v$pXrmSqYkLg8XwbCb4b5/W/",
+    "{CRYPT}$1$G2delXmX$PVmuP3qePEtOYkZcMa2BB/"]})
 
-directory = dict([manager, alice, bob])
+directory = dict([manager, alice, bob, theo])
 
 
 def load_tests(loader, tests, pattern):
@@ -50,6 +53,18 @@ class TestLDAPObject(unittest.TestCase):
 
     def test_simple_bind_s_fail_login(self):
         self.assertRaises(ldap.INVALID_CREDENTIALS, self.ldap.simple_bind_s, "cn=alice,ou=example,o=test", "wrong")
+
+    def test_simple_bind_s_secondary_password(self):
+        self.assertEqual(self.ldap.simple_bind_s("cn=bob,ou=other,o=test", "bobpw2"), (97, []))
+
+    def test_simple_bind_s_success_crypt_password(self):
+        self.assertEqual(self.ldap.simple_bind_s("cn=theo,ou=example,o=test", "theopw"), (97, []))
+
+    def test_simple_bind_s_success_crypt_secondary_password(self):
+        self.assertEqual(self.ldap.simple_bind_s("cn=theo,ou=example,o=test", "theopw2"), (97, []))
+
+    def test_simple_bind_s_fail_crypt_password(self):
+        self.assertRaises(ldap.INVALID_CREDENTIALS, self.ldap.simple_bind_s, "cn=theo,ou=example,o=test", "theopw3")
 
     def test_search_s_get_directory_items_with_scope_onelevel(self):
         result = []
