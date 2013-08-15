@@ -118,7 +118,7 @@ class RecordedMethod(object):
             elif isinstance(value, types.TypeType) and issubclass(value, Exception):
                 raise value()
 
-        return value
+        return deepcopy(value)
 
     def seed(self, *args, **kwargs):
         """
