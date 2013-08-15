@@ -7,9 +7,9 @@ except ImportError:
     import unittest
 
 import ldap
+import ldap.modlist
 
 from . import MockLdap
-from .ldapobject import LDAPObject
 
 
 manager = ("cn=Manager,ou=example,o=test", {"userPassword": ["ldaptest"]})
@@ -32,71 +32,109 @@ def load_tests(loader, tests, pattern):
 
 
 class TestLDAPObject(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.mockldap = MockLdap(directory)
+
     def setUp(self):
-        self.ldap = LDAPObject(directory)
+        self.mockldap.start()
+        self.ldapobj = self.mockldap['ldap://localhost']
+
+    def tearDown(self):
+        self.mockldap.stop()
 
     def test_set_option(self):
-        self.ldap.set_option(ldap.OPT_X_TLS_DEMAND, True)
-        self.assertEqual(self.ldap.get_option(ldap.OPT_X_TLS_DEMAND), True)
+        self.ldapobj.set_option(ldap.OPT_X_TLS_DEMAND, True)
+        self.assertEqual(self.ldapobj.get_option(ldap.OPT_X_TLS_DEMAND), True)
 
     def test_simple_bind_s_success(self):
-        self.assertEqual(self.ldap.simple_bind_s("cn=alice,ou=example,o=test", "alicepw"), (97, []))
+        self.assertEqual(self.ldapobj.simple_bind_s("cn=alice,ou=example,o=test", "alicepw"), (97, []))
 
     def test_simple_bind_s_success_case_insensitive(self):
-        self.assertEqual(self.ldap.simple_bind_s("cn=manager,ou=Example,o=test", "ldaptest"), (97, []))
+        self.assertEqual(self.ldapobj.simple_bind_s("cn=manager,ou=Example,o=test", "ldaptest"), (97, []))
 
     def test_simple_bind_s_anon_user(self):
-        self.assertEqual(self.ldap.simple_bind_s(), (97, []))
+        self.assertEqual(self.ldapobj.simple_bind_s(), (97, []))
 
     def test_simple_bind_s_raise_no_such_object(self):
-        self.assertRaises(ldap.NO_SUCH_OBJECT, self.ldap.simple_bind_s, "cn=blah,o=test", "password")
+        self.assertRaises(ldap.NO_SUCH_OBJECT, self.ldapobj.simple_bind_s, "cn=blah,o=test", "password")
 
     def test_simple_bind_s_fail_login(self):
-        self.assertRaises(ldap.INVALID_CREDENTIALS, self.ldap.simple_bind_s, "cn=alice,ou=example,o=test", "wrong")
+        self.assertRaises(ldap.INVALID_CREDENTIALS, self.ldapobj.simple_bind_s, "cn=alice,ou=example,o=test", "wrong")
 
     def test_simple_bind_s_secondary_password(self):
-        self.assertEqual(self.ldap.simple_bind_s("cn=bob,ou=other,o=test", "bobpw2"), (97, []))
+        self.assertEqual(self.ldapobj.simple_bind_s("cn=bob,ou=other,o=test", "bobpw2"), (97, []))
 
     def test_simple_bind_s_success_crypt_password(self):
-        self.assertEqual(self.ldap.simple_bind_s("cn=theo,ou=example,o=test", "theopw"), (97, []))
+        self.assertEqual(self.ldapobj.simple_bind_s("cn=theo,ou=example,o=test", "theopw"), (97, []))
 
     def test_simple_bind_s_success_crypt_secondary_password(self):
-        self.assertEqual(self.ldap.simple_bind_s("cn=theo,ou=example,o=test", "theopw2"), (97, []))
+        self.assertEqual(self.ldapobj.simple_bind_s("cn=theo,ou=example,o=test", "theopw2"), (97, []))
 
     def test_simple_bind_s_fail_crypt_password(self):
-        self.assertRaises(ldap.INVALID_CREDENTIALS, self.ldap.simple_bind_s, "cn=theo,ou=example,o=test", "theopw3")
+        self.assertRaises(ldap.INVALID_CREDENTIALS, self.ldapobj.simple_bind_s, "cn=theo,ou=example,o=test", "theopw3")
 
     def test_search_s_get_directory_items_with_scope_onelevel(self):
         result = []
         for key, attrs in directory.items():
             if key.endswith("ou=example,o=test"):
                 result.append((key, attrs))
-        self.assertEqual(self.ldap.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL, '(cn=*)'), result)
+        self.assertEqual(self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL, '(cn=*)'), result)
 
     def test_search_s_get_all_directory_items_with_scope_subtree(self):
         result = []
         for key, attrs in directory.items():
             if key.endswith("o=test"):
                 result.append((key, attrs))
-        self.assertEqual(self.ldap.search_s("o=test", ldap.SCOPE_SUBTREE, '(cn=*)'), result)
+        self.assertEqual(self.ldapobj.search_s("o=test", ldap.SCOPE_SUBTREE, '(cn=*)'), result)
 
     def test_search_s_get_specific_item_with_scope_base(self):
         result = [("cn=alice,ou=example,o=test", directory["cn=alice,ou=example,o=test"])]
-        self.assertEqual(self.ldap.search_s("cn=alice,ou=example,o=test", ldap.SCOPE_BASE), result)
+        self.assertEqual(self.ldapobj.search_s("cn=alice,ou=example,o=test", ldap.SCOPE_BASE), result)
 
     def test_search_s_get_specific_attr(self):
         result = [("cn=alice,ou=example,o=test", {"userPassword": ["alicepw"]})]
-        self.assertEqual(self.ldap.search_s("cn=alice,ou=example,o=test", ldap.SCOPE_BASE, attrlist=["userPassword"]), result)
+        self.assertEqual(self.ldapobj.search_s("cn=alice,ou=example,o=test", ldap.SCOPE_BASE, attrlist=["userPassword"]), result)
 
     def test_search_s_use_attrsonly(self):
         result = [("cn=alice,ou=example,o=test", {"userPassword": []})]
-        self.assertEqual(self.ldap.search_s("cn=alice,ou=example,o=test", ldap.SCOPE_BASE, attrlist=["userPassword"], attrsonly=1), result)
+        self.assertEqual(self.ldapobj.search_s("cn=alice,ou=example,o=test", ldap.SCOPE_BASE, attrlist=["userPassword"], attrsonly=1), result)
 
     def test_search_s_scope_base_no_such_object(self):
-        self.assertRaises(ldap.NO_SUCH_OBJECT, self.ldap.search_s, "cn=blah,ou=example,o=test", ldap.SCOPE_BASE)
+        self.assertRaises(ldap.NO_SUCH_OBJECT, self.ldapobj.search_s, "cn=blah,ou=example,o=test", ldap.SCOPE_BASE)
 
     def test_search_s_empty_list(self):
-        self.assertEqual(self.ldap.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL, '(uid=blah)'), [])
+        self.assertEqual(self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL, '(uid=blah)'), [])
+
+    def test_start_tls_s_disabled_by_default(self):
+        self.assertEqual(self.ldapobj.tls_enabled, False)
+
+    def test_start_tls_s_enabled(self):
+        self.ldapobj.start_tls_s()
+        self.assertEqual(self.ldapobj.tls_enabled, True)
+
+    def test_add_s(self):
+        dn = 'cn=mike,ou=example,o=test'
+        attrs = {
+            'objectClass': ['top', 'organizationalRole'],
+            'cn': ['mike'],
+            'userPassword': ['mikepw'],
+        }
+        ldif = ldap.modlist.addModlist(attrs)
+        self.assertEqual(self.ldapobj.add_s(dn, ldif), (105, [], 1, []))
+        self.assertEqual(self.ldapobj.directory[dn], attrs)
+
+    def test_add_s_already_exists(self):
+        attrs = {'cn': ['mike']}
+        ldif = ldap.modlist.addModlist(attrs)
+        self.assertRaises(ldap.ALREADY_EXISTS, self.ldapobj.add_s, alice[0], ldif)
+        self.assertNotEqual(self.ldapobj.directory[alice[0]], attrs)
+
+    def test_modify_s_replace_value_of_attribute(self):
+        mod_list = []
+        mod_list.append((ldap.MOD_REPLACE, 'userPassword', ['alice', 'alicepw2']))
+        self.assertEqual(self.ldapobj.modify_s(alice[0], mod_list), (103, []))
+        print self.ldapobj.directory[alice[0]]
 
 
 def initialize(*args, **kwargs):
