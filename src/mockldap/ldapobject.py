@@ -122,6 +122,12 @@ class LDAPObject(RecordableMethods):
         return self._compare_s(dn, attr, value)
 
     @recorded
+    def modify_s(self, dn, mod_attrs):
+        """
+        """
+        return self._modify_s(dn, mod_attrs)
+
+    @recorded
     def add_s(self, dn, record):
         """
         """
@@ -202,6 +208,37 @@ class LDAPObject(RecordableMethods):
                     get_results(dn, filterstr, results)
 
         return results
+
+    def _modify_s(self, dn, mod_attrs):
+        try:
+            entry = self.directory[dn]
+        except KeyError:
+            raise ldap.NO_SUCH_OBJECT
+
+        for item in mod_attrs:
+            op, key, value = item
+            if op is 0:
+                # FIXME: Can't handle multiple entries with the same name
+                # its broken right now
+                # do a MOD_ADD, assume it to be a list of values
+                key.append(value)
+            elif op is 1:
+                # do a MOD_DELETE
+                if row is tpyes.ListType:
+                    row = entry[key]
+                    for i in range(len(row)):
+                        if value is row[i]:
+                            del row[i]
+                else:
+                    del entry[key]
+                self.directory[dn] = entry
+            elif op is 2:
+                # do a MOD_REPLACE
+                entry[key] = value
+
+        self.directory[dn] = entry
+
+        return (103, [])
 
     def _add_s(self, dn, record):
         entry = {}
