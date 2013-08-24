@@ -135,6 +135,18 @@ class LDAPObject(RecordableMethods):
         return self._add_s(dn, record)
 
     @recorded
+    def rename_s(self, dn, newdn):
+        """
+        """
+        return self._rename_s(dn, newdn)
+
+    @recorded
+    def delete_s(self, dn):
+        """
+        """
+        return self._delete_s(dn)
+
+    @recorded
     def unbind(self):
         """
         """
@@ -305,6 +317,30 @@ class LDAPObject(RecordableMethods):
         except KeyError:
             self.directory[dn] = entry
             return (105, [], len(self.methods_called()), [])
+
+    def _rename_s(self, dn, newdn):
+        try:
+            entry = self.directory[dn]
+        except KeyError:
+            raise self.NO_SUCH_OBJECT
+
+        changes = newdn.split('=')
+        newfulldn = '%s=%s,%s' % (changes[0], changes[1],
+                                  ','.join(dn.split(',')[1:]))
+
+        entry[changes[0]] = changes[1]
+        self.directory[newfulldn] = entry
+        del self.directory[dn]
+
+        return (109, [])
+
+    def _delete_s(self, dn):
+        try:
+            del self.directory[dn]
+        except KeyError:
+            raise ldap.NO_SUCH_OBJECT
+
+        return (107, [])
 
     #
     # Async
