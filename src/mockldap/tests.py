@@ -12,14 +12,20 @@ import ldap.modlist
 from . import MockLdap
 
 
-manager = ("cn=Manager,ou=example,o=test", {"userPassword": ["ldaptest"]})
-alice = ("cn=alice,ou=example,o=test", {"userPassword": ["alicepw"]})
-bob = ("cn=bob,ou=other,o=test", {"userPassword": ["bobpw", "bobpw2"]})
+manager = ("cn=Manager,ou=example,o=test", {
+    "userPassword": ["ldaptest"],
+    "objectClass": ["top", "posixAccount", "inetOrgPerson"]})
+alice = ("cn=alice,ou=example,o=test", {
+    "userPassword": ["alicepw"], "objectClass": ["top", "posixAccount"]})
+bob = ("cn=bob,ou=other,o=test", {"userPassword": ["bobpw", "bobpw2"],
+    "objectClass": ["top"]})
 theo = ("cn=theo,ou=example,o=test", {"userPassword": [
     "{CRYPT}$1$95Aqvh4v$pXrmSqYkLg8XwbCb4b5/W/",
-    "{CRYPT}$1$G2delXmX$PVmuP3qePEtOYkZcMa2BB/"]})
+    "{CRYPT}$1$G2delXmX$PVmuP3qePEtOYkZcMa2BB/"]},
+    "objectClass": ["top", "posixAccount"]})
+john = ("cn=john,ou=example,o=test", {"objectClass": ["top"]})
 
-directory = dict([manager, alice, bob, theo])
+directory = dict([manager, alice, bob, theo, john])
 
 
 def load_tests(loader, tests, pattern):
