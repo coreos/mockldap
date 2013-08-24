@@ -76,20 +76,20 @@ class TestLDAPObject(unittest.TestCase):
 
     def test_search_s_get_directory_items_with_scope_onelevel(self):
         result = []
-        for key, attrs in directory.items():
+        for key, attrs in self.ldapobj.directory.items():
             if key.endswith("ou=example,o=test"):
                 result.append((key, attrs))
         self.assertEqual(self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL, '(cn=*)'), result)
 
     def test_search_s_get_all_directory_items_with_scope_subtree(self):
         result = []
-        for key, attrs in directory.items():
+        for key, attrs in self.ldapobj.directory.items():
             if key.endswith("o=test"):
                 result.append((key, attrs))
         self.assertEqual(self.ldapobj.search_s("o=test", ldap.SCOPE_SUBTREE, '(cn=*)'), result)
 
     def test_search_s_get_specific_item_with_scope_base(self):
-        result = [("cn=alice,ou=example,o=test", directory["cn=alice,ou=example,o=test"])]
+        result = [("cn=alice,ou=example,o=test", self.ldapobj.directory["cn=alice,ou=example,o=test"])]
         self.assertEqual(self.ldapobj.search_s("cn=alice,ou=example,o=test", ldap.SCOPE_BASE), result)
 
     def test_search_s_get_specific_attr(self):
@@ -134,7 +134,6 @@ class TestLDAPObject(unittest.TestCase):
         mod_list = []
         mod_list.append((ldap.MOD_REPLACE, 'userPassword', ['alice', 'alicepw2']))
         self.assertEqual(self.ldapobj.modify_s(alice[0], mod_list), (103, []))
-        print self.ldapobj.directory[alice[0]]
 
 
 def initialize(*args, **kwargs):
