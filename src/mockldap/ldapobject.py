@@ -79,12 +79,13 @@ class LDAPObject(RecordableMethods):
 
         if success:
             self.bound_as = who
-            return (97, []) # python-ldap returns this; I don't know what it means
+            return (97, [])
         else:
             raise ldap.INVALID_CREDENTIALS('%s:%s' % (who, cred))
 
     @recorded
-    def search(self, base, scope, filterstr='(objectClass=*)', attrlist=None, attrsonly=0):
+    def search(self, base, scope, filterstr='(objectClass=*)',
+               attrlist=None, attrsonly=0):
         """
         Implements searching with simple filters of the form (attr=value),
         where value can be a string or *. attrlist and attrsonly are also
@@ -101,7 +102,8 @@ class LDAPObject(RecordableMethods):
         return ldap.RES_SEARCH_RESULT, self._pop_async_result(msgid)
 
     @recorded
-    def search_s(self, base, scope, filterstr='(objectClass=*)', attrlist=None, attrsonly=0):
+    def search_s(self, base, scope, filterstr='(objectClass=*)',
+                 attrlist=None, attrsonly=0):
         """
         Implements searching with simple filters of the form (attr=value),
         where value can be a string or *. attrlist and attrsonly are also
@@ -171,8 +173,8 @@ class LDAPObject(RecordableMethods):
         valid_filterstr = re.compile(r'\(\w+=([\w@.]+|[*])\)')
 
         if not valid_filterstr.match(filterstr):
-            raise SeedRequired('search_s("%s", %d, "%s", "%s", %d)' %
-                (base, scope, filterstr, attrlist, attrsonly))
+            raise SeedRequired('search_s("%s", %d, "%s", "%s", %d)' % (
+                base, scope, filterstr, attrlist, attrsonly))
 
         def check_dn(dn, all_dn):
             if dn not in all_dn:
@@ -181,7 +183,8 @@ class LDAPObject(RecordableMethods):
         def get_results(dn, filterstr, results):
             attrs = self.directory.get(dn)
             attr, value = filterstr[1:-1].split('=')
-            if attrs and attr in attrs.keys() and str(value) in attrs[attr] or value == u'*':
+            if attrs and attr in attrs.keys() and str(value) in attrs[attr] \
+                    or value == u'*':
                 new_attrs = attrs.copy()
                 if attrlist or attrsonly:
                     for item in new_attrs.keys():
@@ -199,7 +202,8 @@ class LDAPObject(RecordableMethods):
         elif scope == ldap.SCOPE_ONELEVEL:
             for dn in all_dn:
                 check_dn(dn, all_dn)
-                if len(dn.split('=')) == len(base.split('=')) + 1 and dn.endswith(base):
+                if len(dn.split('=')) == len(base.split('=')) + 1 and \
+                        dn.endswith(base):
                     get_results(dn, filterstr, results)
         elif scope == ldap.SCOPE_SUBTREE:
             for dn in all_dn:
@@ -224,7 +228,7 @@ class LDAPObject(RecordableMethods):
                 key.append(value)
             elif op is 1:
                 # do a MOD_DELETE
-                if row is tpyes.ListType:
+                if row.isistance(list):
                     row = entry[key]
                     for i in range(len(row)):
                         if value is row[i]:
