@@ -184,7 +184,8 @@ class LDAPObject(RecordableMethods):
         if filterstr.count('|') > 1 or filterstr.count('&') > 1 or \
                 (filterstr.count('|') == 1 and filterstr[1] != '|') or \
                 (filterstr.count('&') == 1 and filterstr[1] != '&') or \
-                '))' in filterstr[-1] or '!' in filterstr:
+                '))' in filterstr[-1] or '!' in filterstr or \
+                (filterstr.count('*') != filterstr.count('=*)')):
             raise SeedRequired('search_s("%s", %d, "%s", "%s", %d)' % (
                 base, scope, filterstr, attrlist, attrsonly))
 
