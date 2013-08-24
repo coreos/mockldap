@@ -1,7 +1,6 @@
 from __future__ import absolute_import
 
 from copy import deepcopy
-import re
 
 import ldap
 try:
@@ -170,9 +169,10 @@ class LDAPObject(RecordableMethods):
         return (value in self.directory[dn][attr]) and 1 or 0
 
     def _search_s(self, base, scope, filterstr, attrlist, attrsonly):
-        valid_filterstr = re.compile(r'\(\w+=([\w@.]+|[*])\)')
-
-        if not valid_filterstr.match(filterstr):
+        if filterstr.count('|') > 1 or filterstr.count('&') > 1 or \
+                (filterstr.count('|') == 1 and filterstr[1] != '|') or \
+                (filterstr.count('&') == 1 and filterstr[1] != '&') or \
+                '))' in filterstr[-1] or '!' in filterstr:
             raise SeedRequired('search_s("%s", %d, "%s", "%s", %d)' % (
                 base, scope, filterstr, attrlist, attrsonly))
 
@@ -181,10 +181,62 @@ class LDAPObject(RecordableMethods):
                 raise ldap.NO_SUCH_OBJECT
 
         def get_results(dn, filterstr, results):
+            filters = {}
+            search_type = None
             attrs = self.directory.get(dn)
-            attr, value = filterstr[1:-1].split('=')
-            if attrs and attr in attrs.keys() and str(value) in attrs[attr] \
-                    or value == u'*':
+            found = None
+
+            if filterstr[1] is '&' or '|':
+                search_type = filterstr[1]
+                subfilters = filterstr[3:-2].split(')(')
+                for subfilter in subfilters:
+                    attr, value = subfilter.split('=')
+                    try:
+                        filters[attr].update([value])
+                    except KeyError:
+                        filters[attr] = set([value])
+
+            if search_type == '&':
+                found = True
+                for attr, value in filters.items():
+                    if not found:
+                        break
+                    try:
+                        curr_value = set(attrs[attr])
+                    except KeyError:
+                        found = False
+                        break
+                    if value.issubset(curr_value) or list(value)[0] == u'*':
+                        found = True
+                    else:
+                        found = False
+                        break
+            elif search_type == '|':
+                found = False
+                for attr, value in filters.items():
+                    if found:
+                        break
+                    try:
+                        curr_value = set(attrs[attr])
+                    except KeyError:
+                        continue
+                    if value.issubset(curr_value) or list(value)[0] == u'*':
+                        found = True
+                        break
+                    else:
+                        found = False
+            else:
+                attr, value = filterstr[1:-1].split('=')
+                try:
+                    if attrs and attrs[attr] and attr in attrs.keys() and \
+                            str(value) in attrs[attr] or value == u'*':
+                        found = True
+                    else:
+                        found = False
+                except KeyError:
+                    found = False
+
+            if found:
                 new_attrs = attrs.copy()
                 if attrlist or attrsonly:
                     for item in new_attrs.keys():
