@@ -21,7 +21,7 @@ bob = ("cn=bob,ou=other,o=test", {"userPassword": ["bobpw", "bobpw2"],
     "objectClass": ["top"]})
 theo = ("cn=theo,ou=example,o=test", {"userPassword": [
     "{CRYPT}$1$95Aqvh4v$pXrmSqYkLg8XwbCb4b5/W/",
-    "{CRYPT}$1$G2delXmX$PVmuP3qePEtOYkZcMa2BB/"]},
+    "{CRYPT}$1$G2delXmX$PVmuP3qePEtOYkZcMa2BB/"],
     "objectClass": ["top", "posixAccount"]})
 john = ("cn=john,ou=example,o=test", {"objectClass": ["top"]})
 
@@ -85,14 +85,14 @@ class TestLDAPObject(unittest.TestCase):
         for key, attrs in self.ldapobj.directory.items():
             if key.endswith("ou=example,o=test"):
                 result.append((key, attrs))
-        self.assertEqual(self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL, '(cn=*)'), result)
+        self.assertEqual(self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL), result)
 
     def test_search_s_get_all_directory_items_with_scope_subtree(self):
         result = []
         for key, attrs in self.ldapobj.directory.items():
             if key.endswith("o=test"):
                 result.append((key, attrs))
-        self.assertEqual(self.ldapobj.search_s("o=test", ldap.SCOPE_SUBTREE, '(cn=*)'), result)
+        self.assertEqual(self.ldapobj.search_s("o=test", ldap.SCOPE_SUBTREE), result)
 
     def test_search_s_get_specific_item_with_scope_base(self):
         result = [("cn=alice,ou=example,o=test", self.ldapobj.directory["cn=alice,ou=example,o=test"])]
@@ -106,10 +106,31 @@ class TestLDAPObject(unittest.TestCase):
         result = [("cn=alice,ou=example,o=test", {"userPassword": []})]
         self.assertEqual(self.ldapobj.search_s("cn=alice,ou=example,o=test", ldap.SCOPE_BASE, attrlist=["userPassword"], attrsonly=1), result)
 
+    def test_search_s_specific_attr_in_filterstr(self):
+        self.assertEqual(self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL, '(userPassword=alicepw)'), [alice])
+
+    def test_search_s_invalid_filterstr(self):
+        self.assertEqual(self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL, '(invalid=*)'), [])
+
+    def test_search_s_get_items_that_have_userpassword_set(self):
+        self.assertEqual(self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL, '(userPassword=*)'), [alice, manager, theo])
+
+    def test_search_s_mutliple_filterstr_items_with_and(self):
+        self.assertEqual(self.ldapobj.search_s("o=test", ldap.SCOPE_SUBTREE, "(&(objectClass=top)(objectClass=posixAccount)(userPassword=*))"), [alice, manager, theo])
+
+    def test_search_s_mutliple_filterstr_items_one_invalid_with_and(self):
+        self.assertEqual(self.ldapobj.search_s("o=test", ldap.SCOPE_SUBTREE, "(&(objectClass=top)(objectClass=posixAccount)(invalid=yo))"), [])
+
+    def test_search_s_multiple_filterstr_items_with_or(self):
+        self.assertEqual(self.ldapobj.search_s("o=test", ldap.SCOPE_SUBTREE, "(|(objectClass=inetOrgPerson)(userPassword=bobpw2))"), [bob, manager])
+
+    def test_search_s_multiple_filterstr_items_one_invalid_with_or(self):
+        self.assertEqual(self.ldapobj.search_s("o=test", ldap.SCOPE_SUBTREE, "(|(objectClass=inetOrgPerson)(userPassword=bobpw2)(invalid=yo))"), [bob, manager])
+
     def test_search_s_scope_base_no_such_object(self):
         self.assertRaises(ldap.NO_SUCH_OBJECT, self.ldapobj.search_s, "cn=blah,ou=example,o=test", ldap.SCOPE_BASE)
 
-    def test_search_s_empty_list(self):
+    def test_search_s_no_results(self):
         self.assertEqual(self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL, '(uid=blah)'), [])
 
     def test_start_tls_s_disabled_by_default(self):
@@ -137,10 +158,15 @@ class TestLDAPObject(unittest.TestCase):
         self.assertNotEqual(self.ldapobj.directory[alice[0]], attrs)
 
     def test_modify_s_replace_value_of_attribute(self):
-        mod_list = []
-        mod_list.append((ldap.MOD_REPLACE, 'userPassword', ['alice', 'alicepw2']))
-        self.assertEqual(self.ldapobj.modify_s(alice[0], mod_list), (103, []))
+        new_pw = ['alice', 'alicepw2']
+        mod_list = [(ldap.MOD_REPLACE, 'userPassword', new_pw)]
+        result = self.ldapobj.modify_s(alice[0], mod_list)
+        self.assertEqual(result, (103, []))
+        self.assertEqual(self.ldapobj.directory[alice[0]]['userPassword'], new_pw)
 
+    def test_modify_s_no_such_object(self):
+        mod_list = [(ldap.MOD_REPLACE, 'userPassword', ['test'])]
+        self.assertRaises(ldap.NO_SUCH_OBJECT, self.ldapobj.modify_s, 'ou=invalid,o=test', mod_list)
 
 def initialize(*args, **kwargs):
     """ Dummy patch target for the tests below. """
