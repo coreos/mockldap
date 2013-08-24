@@ -196,16 +196,16 @@ class LDAPObject(RecordableMethods):
 
         results = []
         all_dn = self.directory.keys()
-        if scope == ldap.SCOPE_BASE:
+        if scope is ldap.SCOPE_BASE:
             check_dn(base, all_dn)
             get_results(base, filterstr, results)
-        elif scope == ldap.SCOPE_ONELEVEL:
+        elif scope is ldap.SCOPE_ONELEVEL:
             for dn in all_dn:
                 check_dn(dn, all_dn)
                 if len(dn.split('=')) == len(base.split('=')) + 1 and \
                         dn.endswith(base):
                     get_results(dn, filterstr, results)
-        elif scope == ldap.SCOPE_SUBTREE:
+        elif scope is ldap.SCOPE_SUBTREE:
             for dn in all_dn:
                 check_dn(dn, all_dn)
                 if dn.endswith(base):
@@ -221,13 +221,12 @@ class LDAPObject(RecordableMethods):
 
         for item in mod_attrs:
             op, key, value = item
-            if op is 0:
+            if op is ldap.MOD_ADD:
                 # FIXME: Can't handle multiple entries with the same name
                 # its broken right now
                 # do a MOD_ADD, assume it to be a list of values
                 key.append(value)
-            elif op is 1:
-                # do a MOD_DELETE
+            elif op is ldap.MOD_DELETE:
                 if row.isistance(list):
                     row = entry[key]
                     for i in range(len(row)):
@@ -236,8 +235,7 @@ class LDAPObject(RecordableMethods):
                 else:
                     del entry[key]
                 self.directory[dn] = entry
-            elif op is 2:
-                # do a MOD_REPLACE
+            elif op is ldap.MOD_REPLACE:
                 entry[key] = value
 
         self.directory[dn] = entry
