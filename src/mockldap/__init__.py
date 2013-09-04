@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 from .ldapobject import LDAPObject
-from .recording import SeedRequired  # NOQA
+from .recording import SeedRequired  # noqa
 
 
 URI_DEFAULT = '__default__'
@@ -28,7 +28,8 @@ class MockLdap(object):
 
     def __getitem__(self, uri):
         if self.ldap_objects is None:
-            raise KeyError("You must call start() before asking for mock LDAP objects.")
+            raise KeyError(
+                "You must call start() before asking for mock LDAP objects.")
 
         return self.ldap_objects[uri]
 
@@ -78,7 +79,8 @@ class MockLdap(object):
 
         if self.ldap_objects is None:
             ldap_objects = map_values(LDAPObject, self.directories)
-            self.ldap_objects = defaultdict(self._new_ldap_object, ldap_objects)
+            self.ldap_objects = defaultdict(self._new_ldap_object,
+                                            ldap_objects)
 
         patcher = patch(path, new_callable=lambda: self.initialize)
         patcher.start()

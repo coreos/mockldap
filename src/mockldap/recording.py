@@ -115,7 +115,8 @@ class RecordedMethod(object):
         else:
             if isinstance(value, Exception):
                 raise value
-            elif isinstance(value, types.TypeType) and issubclass(value, Exception):
+            elif (isinstance(value, types.TypeType) and
+                  issubclass(value, Exception)):
                 raise value()
 
         return deepcopy(value)
@@ -149,13 +150,15 @@ class RecordedMethod(object):
         raise :exc:`mockldap.SeedRequired`, indicating that the method must be
         seeded with a return value for these arguments.
         """
-        self._seeded_calls.insert(0, ((deepcopy(args), deepcopy(kwargs)), deepcopy(value)))
+        self._seeded_calls.insert(
+            0, ((deepcopy(args), deepcopy(kwargs)), deepcopy(value)))
 
     def _record(self, args, kwargs):
         self._recorded_calls.append((self.func.__name__, args, kwargs))
 
     def _seeded_values(self, args, kwargs):
-        return ifilter(partial(self._seed_matches, args, kwargs), self._seeded_calls)
+        return ifilter(partial(self._seed_matches, args, kwargs),
+                       self._seeded_calls)
 
     def _seed_matches(self, args, kwargs, seed):
         return (seed[0] == (args, kwargs))
