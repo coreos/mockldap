@@ -295,7 +295,10 @@ class LDAPObject(RecordableMethods):
                     del entry[key]
                 self.directory[dn] = entry
             elif op is ldap.MOD_REPLACE:
-                entry[key] = value
+                if type(value) == list:
+                    entry[key] = value
+                elif type(value) == str:
+                    entry[key] = [value]
 
         self.directory[dn] = entry
 

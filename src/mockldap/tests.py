@@ -212,18 +212,30 @@ class TestLDAPObject(unittest.TestCase):
                           ldif)
         self.assertNotEqual(self.ldapobj.directory[alice[0]], attrs)
 
-    def test_modify_s_replace_value_of_attribute(self):
-        new_pw = ['alice', 'alicepw2']
-        mod_list = [(ldap.MOD_REPLACE, 'userPassword', new_pw)]
-        result = self.ldapobj.modify_s(alice[0], mod_list)
-        self.assertEqual(result, (103, []))
-        self.assertEqual(self.ldapobj.directory[alice[0]]['userPassword'],
-                         new_pw)
-
     def test_modify_s_no_such_object(self):
         mod_list = [(ldap.MOD_REPLACE, 'userPassword', ['test'])]
         self.assertRaises(ldap.NO_SUCH_OBJECT, self.ldapobj.modify_s,
                           'ou=invalid,o=test', mod_list)
+
+    def test_modify_s_success_code(self):
+        new_pw = ['alice', 'alicepw2']
+        mod_list = [(ldap.MOD_REPLACE, 'userPassword', new_pw)]
+        result = self.ldapobj.modify_s(alice[0], mod_list)
+        self.assertEqual(result, (103, []))
+
+    def test_modify_s_replace_value_of_attribute_with_multiple_others(self):
+        new_pw = ['alice', 'alicepw2']
+        mod_list = [(ldap.MOD_REPLACE, 'userPassword', new_pw)]
+        self.ldapobj.modify_s(alice[0], mod_list)
+        self.assertEqual(self.ldapobj.directory[alice[0]]['userPassword'],
+                         new_pw)
+
+    def test_modify_s_replace_value_of_attribute_with_another_single(self):
+        new_pw = 'alice'
+        mod_list = [(ldap.MOD_REPLACE, 'userPassword', new_pw)]
+        self.ldapobj.modify_s(alice[0], mod_list)
+        self.assertEqual(self.ldapobj.directory[alice[0]]['userPassword'],
+                         [new_pw])
 
 
 def initialize(*args, **kwargs):
