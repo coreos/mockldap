@@ -178,6 +178,22 @@ class TestLDAPObject(unittest.TestCase):
         self.ldapobj.start_tls_s()
         self.assertEqual(self.ldapobj.tls_enabled, True)
 
+    def test_compare_s_no_such_object(self):
+        self.assertRaises(ldap.NO_SUCH_OBJECT, self.ldapobj.compare_s,
+                          'cn=blah,ou=example,o=test', 'objectClass', 'top')
+
+    def test_compare_s_undefined_type(self):
+        self.assertRaises(ldap.UNDEFINED_TYPE, self.ldapobj.compare_s,
+                          'cn=alice,ou=example,o=test', 'objectClass1', 'top')
+
+    def test_compare_s_true(self):
+        self.assertEqual(self.ldapobj.compare_s(
+            'cn=Manager,ou=example,o=test', 'objectClass', 'top'), 1)
+
+    def test_compare_s_false(self):
+        self.assertEqual(self.ldapobj.compare_s(
+            'cn=Manager,ou=example,o=test', 'objectClass', 'invalid'), 0)
+
     def test_add_s(self):
         dn = 'cn=mike,ou=example,o=test'
         attrs = {

@@ -163,11 +163,11 @@ class LDAPObject(RecordableMethods):
     #
 
     def _compare_s(self, dn, attr, value):
-        if dn not in self.directory:
+        try:
+            if attr not in self.directory[dn]:
+                raise ldap.UNDEFINED_TYPE
+        except KeyError:
             raise ldap.NO_SUCH_OBJECT
-
-        if attr not in self.directory[dn]:
-            raise ldap.NO_SUCH_ATTRIBUTE
 
         if attr == 'userPassword':
             for password in self.directory[dn][attr]:
