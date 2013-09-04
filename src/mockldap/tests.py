@@ -149,7 +149,7 @@ class TestLDAPObject(unittest.TestCase):
     def test_search_s_mutliple_filterstr_items_one_invalid_with_and(self):
         self.assertEqual(self.ldapobj.search_s(
             "o=test", ldap.SCOPE_SUBTREE,
-            "(&(objectClass=top)(objectClass=posixAccount)(invalid=yo))"), [])
+            "(&(objectClass=top)(invalid=yo)(objectClass=posixAccount))"), [])
 
     def test_search_s_multiple_filterstr_items_with_or(self):
         self.assertEqual(self.ldapobj.search_s(
@@ -160,7 +160,7 @@ class TestLDAPObject(unittest.TestCase):
     def test_search_s_multiple_filterstr_items_one_invalid_with_or(self):
         self.assertEqual(self.ldapobj.search_s(
             "o=test", ldap.SCOPE_SUBTREE,
-            "(|(objectClass=inetOrgPerson)(userPassword=bobpw2)(invalid=yo))"),
+            "(|(objectClass=inetOrgPerson)(invalid=yo)(userPassword=bobpw2))"),
             [bob, manager])
 
     def test_search_s_scope_base_no_such_object(self):
