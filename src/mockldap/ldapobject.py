@@ -197,7 +197,7 @@ class LDAPObject(RecordableMethods):
             filters = {}
             search_type = None
             attrs = self.directory.get(dn)
-            found = None
+            found = False
 
             if filterstr[1] is '&' or '|':
                 search_type = filterstr[1]
@@ -210,10 +210,7 @@ class LDAPObject(RecordableMethods):
                         filters[attr] = set([value])
 
             if search_type == '&':
-                found = True
                 for attr, value in filters.items():
-                    if not found:
-                        break
                     try:
                         curr_value = set(attrs[attr])
                     except KeyError:
@@ -225,10 +222,7 @@ class LDAPObject(RecordableMethods):
                         found = False
                         break
             elif search_type == '|':
-                found = False
                 for attr, value in filters.items():
-                    if found:
-                        break
                     try:
                         curr_value = set(attrs[attr])
                     except KeyError:
