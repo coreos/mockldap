@@ -357,6 +357,10 @@ class TestLDAPObject(unittest.TestCase):
         self.assertIn('uid=alice1,ou=new,o=test',
                       self.ldapobj.directory.keys())
 
+    def test_rename_s_no_such_object(self):
+        self.assertRaises(ldap.NO_SUCH_OBJECT, self.ldapobj.rename_s,
+                          'uid=invalid,ou=example,o=test', 'uid=invalid2')
+
     def test_delete_s_success_code(self):
         self.assertEqual(self.ldapobj.delete_s(alice[0]), (107, []))
 
@@ -367,6 +371,16 @@ class TestLDAPObject(unittest.TestCase):
     def test_delete_s_no_such_object(self):
         self.assertRaises(ldap.NO_SUCH_OBJECT, self.ldapobj.delete_s,
                           'uid=invalid,ou=example,o=test')
+
+    def test_unbind(self):
+        self.ldapobj.simple_bind_s(alice[0], 'alicepw')
+        self.ldapobj.unbind()
+        self.assertEqual(self.ldapobj.bound_as, None)
+
+    def test_unbind_s(self):
+        self.ldapobj.simple_bind_s(alice[0], 'alicepw')
+        self.ldapobj.unbind_s()
+        self.assertEqual(self.ldapobj.bound_as, None)
 
 
 def initialize(*args, **kwargs):
