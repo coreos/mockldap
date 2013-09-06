@@ -194,7 +194,7 @@ class TestLDAPObject(unittest.TestCase):
         self.assertEqual(self.ldapobj.compare_s(
             'cn=Manager,ou=example,o=test', 'objectClass', 'invalid'), 0)
 
-    def test_add_s(self):
+    def test_add_s_success_code(self):
         dn = 'cn=mike,ou=example,o=test'
         attrs = {
             'objectClass': ['top', 'organizationalRole'],
@@ -203,6 +203,16 @@ class TestLDAPObject(unittest.TestCase):
         }
         ldif = ldap.modlist.addModlist(attrs)
         self.assertEqual(self.ldapobj.add_s(dn, ldif), (105, [], 1, []))
+
+    def test_add_s_successfully_add_object(self):
+        dn = 'cn=mike,ou=example,o=test'
+        attrs = {
+            'objectClass': ['top', 'organizationalRole'],
+            'cn': ['mike'],
+            'userPassword': ['mikepw'],
+        }
+        ldif = ldap.modlist.addModlist(attrs)
+        self.ldapobj.add_s(dn, ldif)
         self.assertEqual(self.ldapobj.directory[dn], attrs)
 
     def test_add_s_already_exists(self):
