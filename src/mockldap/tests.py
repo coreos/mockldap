@@ -17,7 +17,8 @@ manager = ("cn=Manager,ou=example,o=test", {
     "userPassword": ["ldaptest"],
     "objectClass": ["top", "posixAccount", "inetOrgPerson"]})
 alice = ("cn=alice,ou=example,o=test", {
-    "userPassword": ["alicepw"], "objectClass": ["top", "posixAccount"]})
+    "cn": ["alice"], "uid": ["alice"], "userPassword": ["alicepw"],
+    "objectClass": ["top", "posixAccount"]})
 bob = ("cn=bob,ou=other,o=test", {
     "userPassword": ["bobpw", "bobpw2"], "objectClass": ["top"]})
 theo = ("cn=theo,ou=example,o=test", {"userPassword": [
@@ -304,6 +305,57 @@ class TestLDAPObject(unittest.TestCase):
         self.ldapobj.modify_s(manager[0], mod_list)
         self.assertNotIn('objectClass',
                          self.ldapobj.directory[manager[0]].keys())
+
+    def test_rename_s_successful_code(self):
+        self.assertEqual(self.ldapobj.rename_s(
+            'cn=alice,ou=example,o=test', 'uid=alice1'), (109, []))
+
+    def test_rename_s_only_rdn_check_dn(self):
+        self.ldapobj.rename_s(alice[0], 'uid=alice1')
+        self.assertIn('uid=alice1,ou=example,o=test',
+                      self.ldapobj.directory.keys())
+
+    def test_rename_s_only_rdn_append_value_to_existing_attr(self):
+        self.ldapobj.rename_s(alice[0], 'uid=alice1')
+        self.assertEquals(
+            self.ldapobj.directory['uid=alice1,ou=example,o=test']['uid'],
+            ['alice', 'alice1'])
+
+    def test_rename_s_only_rdn_create_new_attr(self):
+        self.ldapobj.rename_s(alice[0], 'sn=alice1')
+        self.assertIn(
+            'sn', self.ldapobj.directory['sn=alice1,ou=example,o=test'].keys())
+        self.assertEquals(
+            self.ldapobj.directory['sn=alice1,ou=example,o=test']['sn'],
+            ['alice1'])
+
+    def test_rename_s_removes_old_dn(self):
+        self.ldapobj.rename_s(alice[0], 'uid=alice1')
+        self.assertNotIn(alice[0], self.ldapobj.directory.keys())
+
+    def test_rename_s_removes_old_attr(self):
+        self.ldapobj.rename_s(alice[0], 'uid=alice1')
+        self.assertNotIn(
+            'cn',
+            self.ldapobj.directory['uid=alice1,ou=example,o=test'].keys())
+
+    def test_rename_s_does_not_remove_multivalued_old_attr(self):
+        self.ldapobj.directory[alice[0]]['cn'].append('alice1')
+        self.ldapobj.rename_s(alice[0], 'uid=alice1')
+        self.assertIn(
+            'cn',
+            self.ldapobj.directory['uid=alice1,ou=example,o=test'].keys())
+        self.assertIn(
+            'alice1',
+            self.ldapobj.directory['uid=alice1,ou=example,o=test']['cn'])
+        self.assertNotIn(
+            'alice',
+            self.ldapobj.directory['uid=alice1,ou=example,o=test']['cn'])
+
+    def test_rename_s_newsuperior_check_dn(self):
+        self.ldapobj.rename_s(alice[0], 'uid=alice1', 'ou=new,o=test')
+        self.assertIn('uid=alice1,ou=new,o=test',
+                      self.ldapobj.directory.keys())
 
 
 def initialize(*args, **kwargs):

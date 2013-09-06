@@ -135,10 +135,10 @@ class LDAPObject(RecordableMethods):
         return self._add_s(dn, record)
 
     @recorded
-    def rename_s(self, dn, newdn):
+    def rename_s(self, dn, newrdn, newsuperior=None):
         """
         """
-        return self._rename_s(dn, newdn)
+        return self._rename_s(dn, newrdn, newsuperior)
 
     @recorded
     def delete_s(self, dn):
@@ -319,17 +319,32 @@ class LDAPObject(RecordableMethods):
             self.directory[dn] = entry
             return (105, [], len(self.methods_called()), [])
 
-    def _rename_s(self, dn, newdn):
+    def _rename_s(self, dn, newrdn, newsuperior):
         try:
             entry = self.directory[dn]
         except KeyError:
-            raise self.NO_SUCH_OBJECT
+            raise ldap.NO_SUCH_OBJECT
 
-        changes = newdn.split('=')
-        newfulldn = '%s=%s,%s' % (changes[0], changes[1],
-                                  ','.join(dn.split(',')[1:]))
+        if newsuperior:
+            superior = newsuperior
+        else:
+            superior = ','.join(dn.split(',')[1:])
 
-        entry[changes[0]] = changes[1]
+        newfulldn = '%s,%s' % (newrdn, superior)
+        oldattr, oldvalue = dn.split(',')[0].split('=')
+        newattr, newvalue = newrdn.split('=')
+
+        try:
+            if newvalue not in entry[newattr]:
+                entry[newattr].append(newvalue)
+        except KeyError:
+            entry[newattr] = [newvalue]
+
+        if oldattr == newattr or len(entry[oldattr]) > 1:
+            entry[oldattr].remove(oldvalue)
+        else:
+            del entry[oldattr]
+
         self.directory[newfulldn] = entry
         del self.directory[dn]
 
