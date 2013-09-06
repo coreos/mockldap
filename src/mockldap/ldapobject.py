@@ -172,8 +172,6 @@ class LDAPObject(RecordableMethods):
         if attr == 'userPassword':
             for password in self.directory[dn][attr]:
                 try:
-                    # TODO: Implement more ldap pwd hashes from passlib
-                    # http://pythonhosted.org/passlib/lib/passlib.hash.html#ldap-hashes
                     if ldap_md5_crypt.verify(value, password):
                         return 1
                 except (NameError, ValueError):
