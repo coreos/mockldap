@@ -357,6 +357,17 @@ class TestLDAPObject(unittest.TestCase):
         self.assertIn('uid=alice1,ou=new,o=test',
                       self.ldapobj.directory.keys())
 
+    def test_delete_s_success_code(self):
+        self.assertEqual(self.ldapobj.delete_s(alice[0]), (107, []))
+
+    def test_delete_s_successful_removal(self):
+        self.ldapobj.delete_s(alice[0])
+        self.assertNotIn(alice[0], self.ldapobj.directory.keys())
+
+    def test_delete_s_no_such_object(self):
+        self.assertRaises(ldap.NO_SUCH_OBJECT, self.ldapobj.delete_s,
+                          'uid=invalid,ou=example,o=test')
+
 
 def initialize(*args, **kwargs):
     """ Dummy patch target for the tests below. """
