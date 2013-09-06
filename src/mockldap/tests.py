@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 
+from copy import copy
 from doctest import DocTestSuite
 try:
     import unittest2 as unittest
@@ -222,8 +223,13 @@ class TestLDAPObject(unittest.TestCase):
                           ldif)
         self.assertNotEqual(self.ldapobj.directory[alice[0]], attrs)
 
+    def test_modify_s_undefined_type(self):
+        mod_list = [(ldap.MOD_REPLACE, 'invalid', 'test')]
+        self.assertRaises(ldap.UNDEFINED_TYPE, self.ldapobj.modify_s, alice[0],
+                          mod_list)
+
     def test_modify_s_no_such_object(self):
-        mod_list = [(ldap.MOD_REPLACE, 'userPassword', ['test'])]
+        mod_list = [(ldap.MOD_REPLACE, 'userPassword', 'test')]
         self.assertRaises(ldap.NO_SUCH_OBJECT, self.ldapobj.modify_s,
                           'ou=invalid,o=test', mod_list)
 
@@ -246,6 +252,58 @@ class TestLDAPObject(unittest.TestCase):
         self.ldapobj.modify_s(alice[0], mod_list)
         self.assertEqual(self.ldapobj.directory[alice[0]]['userPassword'],
                          [new_pw])
+
+    def test_modify_s_replace_with_none(self):
+        mod_list = [(ldap.MOD_REPLACE, 'objectClass', None)]
+        self.ldapobj.modify_s(manager[0], mod_list)
+        self.assertNotIn('objectClass',
+                         self.ldapobj.directory[manager[0]].keys())
+
+    def test_modify_s_add_single_value_to_attribute(self):
+        old_pw = copy(self.ldapobj.directory[alice[0]]['userPassword'])
+        new_pw = 'test'
+        mod_list = [(ldap.MOD_ADD, 'userPassword', new_pw)]
+        self.ldapobj.modify_s(alice[0], mod_list)
+        self.assertEqual(set(old_pw) | set([new_pw]),
+                         set(self.ldapobj.directory[alice[0]]['userPassword']))
+
+    def test_modify_s_add_multiple_values_to_attribute(self):
+        old_pw = copy(self.ldapobj.directory[alice[0]]['userPassword'])
+        new_pw = ['test1', 'test2']
+        mod_list = [(ldap.MOD_ADD, 'userPassword', new_pw)]
+        self.ldapobj.modify_s(alice[0], mod_list)
+        self.assertEqual(set(old_pw) | set(new_pw),
+                         set(self.ldapobj.directory[alice[0]]['userPassword']))
+
+    def test_modify_s_add_none_value_raises_protocol_error(self):
+        mod_list = [(ldap.MOD_ADD, 'userPassword', None)]
+        self.assertRaises(ldap.PROTOCOL_ERROR, self.ldapobj.modify_s, bob[0],
+                          mod_list)
+
+    def test_modify_s_dont_add_already_existing_value(self):
+        old_pw = copy(self.ldapobj.directory[bob[0]]['userPassword'])
+        mod_list = [(ldap.MOD_ADD, 'userPassword', 'bobpw')]
+        self.ldapobj.modify_s(bob[0], mod_list)
+        self.assertEqual(self.ldapobj.directory[bob[0]]['userPassword'],
+                         old_pw)
+
+    def test_modify_s_delete_single_value_from_attribute(self):
+        mod_list = [(ldap.MOD_DELETE, 'userPassword', 'bobpw')]
+        self.ldapobj.modify_s(bob[0], mod_list)
+        self.assertEqual(self.ldapobj.directory[bob[0]]['userPassword'],
+                         ['bobpw2'])
+
+    def test_modify_s_delete_multiple_values_from_attribute(self):
+        mod_list = [(ldap.MOD_DELETE, 'objectClass', ['top', 'inetOrgPerson'])]
+        self.ldapobj.modify_s(manager[0], mod_list)
+        self.assertEqual(self.ldapobj.directory[manager[0]]['objectClass'],
+                         ['posixAccount'])
+
+    def test_modify_s_delete_all_values_from_attribute(self):
+        mod_list = [(ldap.MOD_DELETE, 'objectClass', None)]
+        self.ldapobj.modify_s(manager[0], mod_list)
+        self.assertNotIn('objectClass',
+                         self.ldapobj.directory[manager[0]].keys())
 
 
 def initialize(*args, **kwargs):

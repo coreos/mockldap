@@ -273,34 +273,37 @@ class LDAPObject(RecordableMethods):
         return results
 
     def _modify_s(self, dn, mod_attrs):
-        try:
-            entry = self.directory[dn]
-        except KeyError:
-            raise ldap.NO_SUCH_OBJECT
-
         for item in mod_attrs:
             op, key, value = item
-            if op is ldap.MOD_ADD:
-                # FIXME: Can't handle multiple entries with the same name
-                # its broken right now
-                # do a MOD_ADD, assume it to be a list of values
-                key.append(value)
-            elif op is ldap.MOD_DELETE:
-                if row.isistance(list):
-                    row = entry[key]
-                    for i in range(len(row)):
-                        if value is row[i]:
-                            del row[i]
-                else:
-                    del entry[key]
-                self.directory[dn] = entry
-            elif op is ldap.MOD_REPLACE:
-                if type(value) == list:
-                    entry[key] = value
-                elif type(value) == str:
-                    entry[key] = [value]
+            try:
+                if key not in self.directory[dn]:
+                    raise ldap.UNDEFINED_TYPE
+            except KeyError:
+                raise ldap.NO_SUCH_OBJECT
 
-        self.directory[dn] = entry
+            entry = self.directory[dn]
+
+            if type(value) is str:
+                value = [value]
+
+            if op is ldap.MOD_ADD:
+                if not value:
+                    raise ldap.PROTOCOL_ERROR
+                for subvalue in value:
+                    if subvalue not in entry[key]:
+                        entry[key].append(subvalue)
+            elif op is ldap.MOD_DELETE:
+                if not value:
+                    del entry[key]
+                else:
+                    for subvalue in value:
+                        if subvalue in entry[key]:
+                            entry[key].remove(subvalue)
+            elif op is ldap.MOD_REPLACE:
+                if not value:
+                    del entry[key]
+                else:
+                    entry[key] = value
 
         return (103, [])
 
