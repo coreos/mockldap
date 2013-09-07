@@ -9,6 +9,7 @@ except ImportError:
 
 import ldap
 import ldap.modlist
+import ldap.filter
 
 from . import MockLdap
 from .filter import ParserError
@@ -134,6 +135,13 @@ class TestLDAPObject(unittest.TestCase):
         self.assertEqual(self.ldapobj.search_s(
             "ou=example,o=test", ldap.SCOPE_ONELEVEL,
             '(userPassword=alicepw)'), [alice])
+
+    def test_search_s_escaped(self):
+        escaped = ldap.filter.escape_filter_chars('alicepw', 2)
+
+        self.assertEqual(self.ldapobj.search_s(
+            "ou=example,o=test", ldap.SCOPE_ONELEVEL,
+            '(userPassword={0})'.format(escaped)), [alice])
 
     def test_search_s_unparsable_filterstr(self):
         with self.assertRaises(ParserError):

@@ -5,7 +5,6 @@ from __future__ import print_function
 
 from functools import partial
 import re
-import sys
 
 from funcparserlib.parser import a, skip, oneplus, finished, with_forward_decls, NoParseError
 
@@ -101,6 +100,7 @@ class Not(Token):
 
 class Test(Token):
     TEST_RE = re.compile(r'(.+?)([~<>]?=)(.+)')
+    UNESCAPE_RE = re.compile(r'\\([0-9a-f]{2})', flags=re.I)
 
     # Defaults
     attr = None
@@ -126,6 +126,9 @@ class Test(Token):
 
         if (u'*' in self.value) and (self.value != u'*'):
             raise UnsupportedOp(u"Wildcard matches are not supported in '{0}'".format(self.value))
+
+        # Resolve all escaped characters
+        self.value = self.UNESCAPE_RE.sub(lambda m: chr(int(m.group(1), 16)), self.value)
 
     def unparse(self):
         return u"({0})".format(self.content)
@@ -217,6 +220,7 @@ ldap_filter = grammar()
 
 if __name__ == '__main__':
     from pprint import pprint
+    import sys
 
     for filterstr in sys.argv[1:]:
         pprint(tokenize(filterstr))
