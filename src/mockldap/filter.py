@@ -6,7 +6,8 @@ from __future__ import print_function
 from functools import partial
 import re
 
-from funcparserlib.parser import a, skip, oneplus, finished, with_forward_decls, NoParseError
+from funcparserlib.parser import (a, skip, oneplus, finished,
+                                  with_forward_decls, NoParseError)
 
 
 class ParserError(Exception):
@@ -35,12 +36,13 @@ class Token(object):
         return self.code == other.code
 
     def __unicode__(self):
-        return u"{0}-{1}: {2} {3!r}".format(self.start, self.stop, self.code, self.content)
+        return u"{0}-{1}: {2} {3!r}".format(self.start, self.stop, self.code,
+                                            self.content)
 
     def __repr__(self):
-        return u"{0}({1!r}, {2!r}, {3!r}, {4!r})".format(self.__class__.__name__,
-                                                         self.code, self.content,
-                                                         self.start, self.stop)
+        return u"{0}({1!r}, {2!r}, {3!r}, {4!r})".format(
+            self.__class__.__name__, self.code, self.content,
+            self.start, self.stop)
 
     def matches(self, dn, attrs):
         raise NotImplementedError()
@@ -117,18 +119,24 @@ class Test(Token):
         match = self.TEST_RE.match(self.content)
 
         if match is None:
-            raise ParserError(u"Failed to parse filter item '{0}' at pos {1}".format(self.content, self.start))
+            raise ParserError(
+                u"Failed to parse filter item '{0}' at pos {1}".format(
+                    self.content, self.start))
 
         self.attr, self.op, self.value = match.groups()
 
         if self.op != '=':
-            raise UnsupportedOp(u"Operation '{0}' is not supported".format(self.op))
+            raise UnsupportedOp(
+                u"Operation '{0}' is not supported".format(self.op))
 
         if (u'*' in self.value) and (self.value != u'*'):
-            raise UnsupportedOp(u"Wildcard matches are not supported in '{0}'".format(self.value))
+            raise UnsupportedOp(
+                u"Wildcard matches are not supported in '{0}'".format(
+                    self.value))
 
         # Resolve all escaped characters
-        self.value = self.UNESCAPE_RE.sub(lambda m: chr(int(m.group(1), 16)), self.value)
+        self.value = self.UNESCAPE_RE.sub(lambda m: chr(int(m.group(1), 16)),
+                                          self.value)
 
     def unparse(self):
         return u"({0})".format(self.content)

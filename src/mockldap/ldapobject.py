@@ -189,14 +189,17 @@ class LDAPObject(RecordableMethods):
         # Find directory entries within the requested scope
         base_parts = ldap.dn.explode_dn(base)
         base_len = len(base_parts)
-        dn_parts = dict((dn, ldap.dn.explode_dn(dn)) for dn in self.directory.iterkeys())
+        dn_parts = dict((dn, ldap.dn.explode_dn(dn)) for dn in
+                        self.directory.iterkeys())
 
         if scope == ldap.SCOPE_BASE:
             dns = iter([base])
         elif scope == ldap.SCOPE_ONELEVEL:
-            dns = (dn for dn, parts in dn_parts.iteritems() if parts[1:] == base_parts)
+            dns = (dn for dn, parts in dn_parts.iteritems()
+                   if parts[1:] == base_parts)
         elif scope == ldap.SCOPE_SUBTREE:
-            dns = (dn for dn, parts in dn_parts.iteritems() if parts[-base_len:] == base_parts)
+            dns = (dn for dn, parts in dn_parts.iteritems()
+                   if parts[-base_len:] == base_parts)
         else:
             raise ValueError(u"Unrecognized scope: {0}".format(scope))
 
@@ -211,7 +214,8 @@ class LDAPObject(RecordableMethods):
 
         # Apply attribute filtering, if any
         if attrlist is not None:
-            results = ((dn, dict((attr, values) for attr, values in attrs.iteritems() if attr in attrlist))
+            results = ((dn, dict((attr, values) for attr, values in
+                                 attrs.iteritems() if attr in attrlist))
                        for dn, attrs in results)
 
         if attrsonly:
