@@ -3,6 +3,8 @@ from __future__ import absolute_import
 from copy import deepcopy
 
 import ldap
+import ldap.dn
+
 try:
     from passlib.hash import ldap_md5_crypt
 except ImportError:
@@ -181,45 +183,42 @@ class LDAPObject(RecordableMethods):
     def _search_s(self, base, scope, filterstr, attrlist, attrsonly):
         from .filter import parse, UnsupportedOp
 
+        if base not in self.directory:
+            raise ldap.NO_SUCH_OBJECT()
+
+        # Find directory entries within the requested scope
+        base_parts = ldap.dn.explode_dn(base)
+        base_len = len(base_parts)
+        dn_parts = dict((dn, ldap.dn.explode_dn(dn)) for dn in self.directory.iterkeys())
+
+        if scope == ldap.SCOPE_BASE:
+            dns = iter([base])
+        elif scope == ldap.SCOPE_ONELEVEL:
+            dns = (dn for dn, parts in dn_parts.iteritems() if parts[1:] == base_parts)
+        elif scope == ldap.SCOPE_SUBTREE:
+            dns = (dn for dn, parts in dn_parts.iteritems() if parts[-base_len:] == base_parts)
+        else:
+            raise ValueError(u"Unrecognized scope: {0}".format(scope))
+
+        # Apply the filter expression
         try:
-            expr = parse(filterstr)
+            filter_expr = parse(filterstr)
         except UnsupportedOp as e:
             raise SeedRequired(e)
 
-        def check_dn(dn, all_dn):
-            if dn not in all_dn:
-                raise ldap.NO_SUCH_OBJECT
+        results = ((dn, self.directory[dn]) for dn in dns
+                   if filter_expr.matches(dn, self.directory[dn]))
 
-        def get_results(dn, filterstr, results):
-            attrs = self.directory.get(dn)
-            if expr.matches(dn, attrs):
-                new_attrs = attrs.copy()
-                if attrlist or attrsonly:
-                    for item in new_attrs.keys():
-                        if attrsonly:
-                            new_attrs[item] = []
-                        if attrlist and item not in attrlist:
-                            del(new_attrs[item])
-                results.append((dn, new_attrs))
+        # Apply attribute filtering, if any
+        if attrlist is not None:
+            results = ((dn, dict((attr, values) for attr, values in attrs.iteritems() if attr in attrlist))
+                       for dn, attrs in results)
 
-        results = []
-        all_dn = self.directory.keys()
-        if scope is ldap.SCOPE_BASE:
-            check_dn(base, all_dn)
-            get_results(base, filterstr, results)
-        elif scope is ldap.SCOPE_ONELEVEL:
-            for dn in all_dn:
-                check_dn(dn, all_dn)
-                if len(dn.split('=')) == len(base.split('=')) + 1 and \
-                        dn.endswith(base):
-                    get_results(dn, filterstr, results)
-        elif scope is ldap.SCOPE_SUBTREE:
-            for dn in all_dn:
-                check_dn(dn, all_dn)
-                if dn.endswith(base):
-                    get_results(dn, filterstr, results)
+        if attrsonly:
+            results = ((dn, dict((attr, []) for attr in attrs.iterkeys()))
+                       for dn, attrs in results)
 
-        return results
+        return list(results)
 
     def _modify_s(self, dn, mod_attrs):
         for item in mod_attrs:

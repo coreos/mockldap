@@ -16,21 +16,26 @@ from .filter import ParserError
 from .recording import SeedRequired
 
 
-manager = ("cn=Manager,ou=example,o=test", {
+test = ("o=test", {"objectClass": ["top"]})
+example = ("ou=example,o=test", {"objectClass": ["top"]})
+other = ("ou=other,o=test", {"objectClass": ["top"]})
+
+manager = ("cn=manager,ou=example,o=test", {
     "userPassword": ["ldaptest"],
     "objectClass": ["top", "posixAccount", "inetOrgPerson"]})
 alice = ("cn=alice,ou=example,o=test", {
     "cn": ["alice"], "uid": ["alice"], "userPassword": ["alicepw"],
     "objectClass": ["top", "posixAccount"]})
-bob = ("cn=bob,ou=other,o=test", {
-    "userPassword": ["bobpw", "bobpw2"], "objectClass": ["top"]})
 theo = ("cn=theo,ou=example,o=test", {"userPassword": [
     "{CRYPT}$1$95Aqvh4v$pXrmSqYkLg8XwbCb4b5/W/",
     "{CRYPT}$1$G2delXmX$PVmuP3qePEtOYkZcMa2BB/"],
     "objectClass": ["top", "posixAccount"]})
 john = ("cn=john,ou=example,o=test", {"objectClass": ["top"]})
 
-directory = dict([manager, alice, bob, theo, john])
+bob = ("cn=bob,ou=other,o=test", {
+    "userPassword": ["bobpw", "bobpw2"], "objectClass": ["top"]})
+
+directory = dict([test, example, other, manager, alice, theo, john, bob])
 
 
 def load_tests(loader, tests, pattern):
@@ -97,51 +102,44 @@ class TestLDAPObject(unittest.TestCase):
                           "cn=theo,ou=example,o=test", "theopw3")
 
     def test_search_s_get_directory_items_with_scope_onelevel(self):
-        result = []
-        for key, attrs in self.ldapobj.directory.items():
-            if key.endswith("ou=example,o=test"):
-                result.append((key, attrs))
-        self.assertEqual(self.ldapobj.search_s("ou=example,o=test",
-                                               ldap.SCOPE_ONELEVEL), result)
+        results = self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL)
+
+        self.assertEqual(sorted(results), sorted([manager, alice, theo, john]))
 
     def test_search_s_get_all_directory_items_with_scope_subtree(self):
-        result = []
-        for key, attrs in self.ldapobj.directory.items():
-            if key.endswith("o=test"):
-                result.append((key, attrs))
-        self.assertEqual(self.ldapobj.search_s("o=test",
-                                               ldap.SCOPE_SUBTREE), result)
+        results = self.ldapobj.search_s("o=test", ldap.SCOPE_SUBTREE)
+
+        self.assertEqual(sorted(results), sorted(directory.iteritems()))
 
     def test_search_s_get_specific_item_with_scope_base(self):
-        result = [("cn=alice,ou=example,o=test",
-                   self.ldapobj.directory["cn=alice,ou=example,o=test"])]
-        self.assertEqual(self.ldapobj.search_s("cn=alice,ou=example,o=test",
-                                               ldap.SCOPE_BASE), result)
+        results = self.ldapobj.search_s("cn=alice,ou=example,o=test", ldap.SCOPE_BASE)
+
+        self.assertEqual(results, [alice])
 
     def test_search_s_get_specific_attr(self):
-        result = [("cn=alice,ou=example,o=test",
-                   {"userPassword": ["alicepw"]})]
-        self.assertEqual(self.ldapobj.search_s(
-            "cn=alice,ou=example,o=test", ldap.SCOPE_BASE,
-            attrlist=["userPassword"]), result)
+        results = self.ldapobj.search_s("cn=alice,ou=example,o=test",
+            ldap.SCOPE_BASE, attrlist=["userPassword"])
+
+        self.assertEqual(results, [(alice[0], {'userPassword': alice[1]['userPassword']})])
 
     def test_search_s_use_attrsonly(self):
-        result = [("cn=alice,ou=example,o=test", {"userPassword": []})]
-        self.assertEqual(self.ldapobj.search_s(
-            "cn=alice,ou=example,o=test", ldap.SCOPE_BASE,
-            attrlist=["userPassword"], attrsonly=1), result)
+        results = self.ldapobj.search_s("cn=alice,ou=example,o=test",
+            ldap.SCOPE_BASE, attrlist=["userPassword"], attrsonly=1)
+
+        self.assertEqual(results, [(alice[0], {'userPassword': []})])
 
     def test_search_s_specific_attr_in_filterstr(self):
-        self.assertEqual(self.ldapobj.search_s(
-            "ou=example,o=test", ldap.SCOPE_ONELEVEL,
-            '(userPassword=alicepw)'), [alice])
+        results = self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL,
+            '(userPassword=alicepw)')
+
+        self.assertEqual(results, [alice])
 
     def test_search_s_escaped(self):
         escaped = ldap.filter.escape_filter_chars('alicepw', 2)
+        results = self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL,
+            '(userPassword={0})'.format(escaped))
 
-        self.assertEqual(self.ldapobj.search_s(
-            "ou=example,o=test", ldap.SCOPE_ONELEVEL,
-            '(userPassword={0})'.format(escaped)), [alice])
+        self.assertEqual(results, [alice])
 
     def test_search_s_unparsable_filterstr(self):
         with self.assertRaises(ParserError):
@@ -164,44 +162,50 @@ class TestLDAPObject(unittest.TestCase):
             self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL, '(invalid~=bogus)')
 
     def test_search_s_get_items_that_have_userpassword_set(self):
-        self.assertEqual(self.ldapobj.search_s(
-            "ou=example,o=test", ldap.SCOPE_ONELEVEL, '(userPassword=*)'),
-            [alice, manager, theo])
+        results = self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL,
+            '(userPassword=*)')
+
+        self.assertEqual(sorted(results), sorted([alice, manager, theo]))
 
     def test_search_s_filterstr_with_not(self):
-        self.assertEqual(sorted(self.ldapobj.search_s("o=test", ldap.SCOPE_SUBTREE, "(!(userPassword=alicepw))")),
-                         sorted([manager, bob, theo, john]))
+        results = self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_SUBTREE,
+            "(!(userPassword=alicepw))")
+
+        self.assertEqual(sorted(results), sorted([example, manager, theo, john]))
 
     def test_search_s_mutliple_filterstr_items_with_and(self):
-        self.assertEqual(self.ldapobj.search_s(
-            "o=test", ldap.SCOPE_SUBTREE,
-            "(&(objectClass=top)(objectClass=posixAccount)(userPassword=*))"),
-            [alice, manager, theo])
+        results = self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_SUBTREE,
+            "(&(objectClass=top)(objectClass=posixAccount)(userPassword=*))")
+
+        self.assertEqual(sorted(results), sorted([alice, manager, theo]))
 
     def test_search_s_mutliple_filterstr_items_one_invalid_with_and(self):
-        self.assertEqual(self.ldapobj.search_s(
-            "o=test", ldap.SCOPE_SUBTREE,
-            "(&(objectClass=top)(invalid=yo)(objectClass=posixAccount))"), [])
+        results = self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_SUBTREE,
+            "(&(objectClass=top)(invalid=yo)(objectClass=posixAccount))")
+
+        self.assertEqual(results, [])
 
     def test_search_s_multiple_filterstr_items_with_or(self):
-        self.assertEqual(self.ldapobj.search_s(
-            "o=test", ldap.SCOPE_SUBTREE,
-            "(|(objectClass=inetOrgPerson)(userPassword=bobpw2))"),
-            [bob, manager])
+        results = self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_SUBTREE,
+            "(|(objectClass=inetOrgPerson)(userPassword=alicepw))")
+
+        self.assertEqual(sorted(results), sorted([alice, manager]))
 
     def test_search_s_multiple_filterstr_items_one_invalid_with_or(self):
-        self.assertEqual(self.ldapobj.search_s(
-            "o=test", ldap.SCOPE_SUBTREE,
-            "(|(objectClass=inetOrgPerson)(invalid=yo)(userPassword=bobpw2))"),
-            [bob, manager])
+        results = self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_SUBTREE,
+            "(|(objectClass=inetOrgPerson)(invalid=yo)(userPassword=alicepw))")
+
+        self.assertEqual(sorted(results), sorted([alice, manager]))
 
     def test_search_s_scope_base_no_such_object(self):
-        self.assertRaises(ldap.NO_SUCH_OBJECT, self.ldapobj.search_s,
-                          "cn=blah,ou=example,o=test", ldap.SCOPE_BASE)
+        with self.assertRaises(ldap.NO_SUCH_OBJECT):
+            self.ldapobj.search_s("cn=blah,ou=example,o=test", ldap.SCOPE_BASE)
 
     def test_search_s_no_results(self):
-        self.assertEqual(self.ldapobj.search_s(
-            "ou=example,o=test", ldap.SCOPE_ONELEVEL, '(uid=blah)'), [])
+        results = self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL,
+            '(uid=blah)')
+
+        self.assertEqual(results, [])
 
     def test_start_tls_s_disabled_by_default(self):
         self.assertEqual(self.ldapobj.tls_enabled, False)
