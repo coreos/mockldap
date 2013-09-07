@@ -11,6 +11,8 @@ import ldap
 import ldap.modlist
 
 from . import MockLdap
+from .filter import ParserError
+from .recording import SeedRequired
 
 
 manager = ("cn=Manager,ou=example,o=test", {
@@ -133,14 +135,34 @@ class TestLDAPObject(unittest.TestCase):
             "ou=example,o=test", ldap.SCOPE_ONELEVEL,
             '(userPassword=alicepw)'), [alice])
 
+    def test_search_s_unparsable_filterstr(self):
+        with self.assertRaises(ParserError):
+            self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL, 'invalid=*')
+
+    def test_search_s_unparsable_filterstr_test(self):
+        with self.assertRaises(ParserError):
+            self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL, '(invalid=)')
+
+    def test_search_s_filterstr_wildcard(self):
+        with self.assertRaises(SeedRequired):
+            self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL, '(invalid=foo*bar)')
+
     def test_search_s_invalid_filterstr(self):
         self.assertEqual(self.ldapobj.search_s(
             "ou=example,o=test", ldap.SCOPE_ONELEVEL, '(invalid=*)'), [])
+
+    def test_search_s_invalid_filterstr_op(self):
+        with self.assertRaises(SeedRequired):
+            self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL, '(invalid~=bogus)')
 
     def test_search_s_get_items_that_have_userpassword_set(self):
         self.assertEqual(self.ldapobj.search_s(
             "ou=example,o=test", ldap.SCOPE_ONELEVEL, '(userPassword=*)'),
             [alice, manager, theo])
+
+    def test_search_s_filterstr_with_not(self):
+        self.assertEqual(sorted(self.ldapobj.search_s("o=test", ldap.SCOPE_SUBTREE, "(!(userPassword=alicepw))")),
+                         sorted([manager, bob, theo, john]))
 
     def test_search_s_mutliple_filterstr_items_with_and(self):
         self.assertEqual(self.ldapobj.search_s(
@@ -381,6 +403,7 @@ class TestLDAPObject(unittest.TestCase):
         self.ldapobj.simple_bind_s(alice[0], 'alicepw')
         self.ldapobj.unbind_s()
         self.assertEqual(self.ldapobj.bound_as, None)
+
 
 
 def initialize(*args, **kwargs):

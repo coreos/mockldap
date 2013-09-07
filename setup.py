@@ -29,6 +29,7 @@ setup(
         'python-ldap',
     ],
     extras_require={
+        'funcparserlib': ['funcparserlib==0.3.6'],
         'passlib': ['passlib>=1.6.1'],
         'mock': ['mock'],
     },

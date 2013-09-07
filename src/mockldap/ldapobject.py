@@ -87,7 +87,7 @@ class LDAPObject(RecordableMethods):
                attrlist=None, attrsonly=0):
         """
         Implements searching with simple filters of the form (attr=value),
-        where value can be a string or *. attrlist and attrsonly are also
+        where value can be a string or \*. attrlist and attrsonly are also
         supported. Beyond that, this method must be seeded.
         """
         value = self._search_s(base, scope, filterstr, attrlist, attrsonly)
@@ -105,7 +105,7 @@ class LDAPObject(RecordableMethods):
                  attrlist=None, attrsonly=0):
         """
         Implements searching with simple filters of the form (attr=value),
-        where value can be a string or *. attrlist and attrsonly are also
+        where value can be a string or \*. attrlist and attrsonly are also
         supported. Beyond that, this method must be seeded.
         """
         return self._search_s(base, scope, filterstr, attrlist, attrsonly)
@@ -179,24 +179,27 @@ class LDAPObject(RecordableMethods):
         return (value in self.directory[dn][attr]) and 1 or 0
 
     def _search_s(self, base, scope, filterstr, attrlist, attrsonly):
-        if filterstr.count('|') > 1 or filterstr.count('&') > 1 or \
-                (filterstr.count('|') == 1 and filterstr[1] != '|') or \
-                (filterstr.count('&') == 1 and filterstr[1] != '&') or \
-                '))' in filterstr[-1] or '!' in filterstr or \
-                (filterstr.count('*') != filterstr.count('=*)')):
-            raise SeedRequired('search_s("%s", %d, "%s", "%s", %d)' % (
-                base, scope, filterstr, attrlist, attrsonly))
+        from .filter import parse, UnsupportedOp
+
+        try:
+            expr = parse(filterstr)
+        except UnsupportedOp as e:
+            raise SeedRequired(e)
 
         def check_dn(dn, all_dn):
             if dn not in all_dn:
                 raise ldap.NO_SUCH_OBJECT
 
         def get_results(dn, filterstr, results):
-            filters = {}
-            search_type = None
             attrs = self.directory.get(dn)
+<<<<<<< local
+=======
             found = False
+>>>>>>> other
 
+<<<<<<< local
+            if expr.matches(dn, attrs):
+=======
             if filterstr[1] is '&' or '|':
                 search_type = filterstr[1]
                 subfilters = filterstr[3:-2].split(')(')
@@ -242,6 +245,7 @@ class LDAPObject(RecordableMethods):
                     found = False
 
             if found:
+>>>>>>> other
                 new_attrs = attrs.copy()
                 if attrlist or attrsonly:
                     for item in new_attrs.keys():
