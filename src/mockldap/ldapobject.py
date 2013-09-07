@@ -192,60 +192,7 @@ class LDAPObject(RecordableMethods):
 
         def get_results(dn, filterstr, results):
             attrs = self.directory.get(dn)
-<<<<<<< local
-=======
-            found = False
->>>>>>> other
-
-<<<<<<< local
             if expr.matches(dn, attrs):
-=======
-            if filterstr[1] is '&' or '|':
-                search_type = filterstr[1]
-                subfilters = filterstr[3:-2].split(')(')
-                for subfilter in subfilters:
-                    attr, value = subfilter.split('=')
-                    try:
-                        filters[attr].update([value])
-                    except KeyError:
-                        filters[attr] = set([value])
-
-            if search_type == '&':
-                for attr, value in filters.items():
-                    try:
-                        curr_value = set(attrs[attr])
-                    except KeyError:
-                        found = False
-                        break
-                    if value.issubset(curr_value) or list(value)[0] == u'*':
-                        found = True
-                    else:
-                        found = False
-                        break
-            elif search_type == '|':
-                for attr, value in filters.items():
-                    try:
-                        curr_value = set(attrs[attr])
-                    except KeyError:
-                        continue
-                    if value.issubset(curr_value) or list(value)[0] == u'*':
-                        found = True
-                        break
-                    else:
-                        found = False
-            else:
-                attr, value = filterstr[1:-1].split('=')
-                try:
-                    if attrs and attrs[attr] and attr in attrs.keys() and \
-                            str(value) in attrs[attr] or value == u'*':
-                        found = True
-                    else:
-                        found = False
-                except KeyError:
-                    found = False
-
-            if found:
->>>>>>> other
                 new_attrs = attrs.copy()
                 if attrlist or attrsonly:
                     for item in new_attrs.keys():

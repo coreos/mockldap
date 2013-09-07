@@ -1,7 +1,4 @@
-<<<<<<< local
 funcparserlib==0.3.6
-=======
 mock>=1.0.1
->>>>>>> other
 passlib>=1.6.1
 python-ldap>=2.4.10
