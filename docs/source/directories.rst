@@ -62,6 +62,13 @@ For each test:
     - After the test, call :meth:`~mockldap.MockLdap.stop` or
       :meth:`~mockldap.MockLdap.stop_all`.
 
+.. warning::
+
+    The code under test must not keep an LDAP "connection" open across
+    individual test cases. If it does, it will be sharing a mock
+    :class:`~mockldap.LDAPObject` across tests, so any state mutations will
+    persist.
+
 
 MockLdap
 --------

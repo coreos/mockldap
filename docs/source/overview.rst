@@ -26,17 +26,21 @@ Example
 
     from mockldap import MockLdap
 
+
     class MyTestCase(unittest.TestCase):
         """
         A simple test case showing off some of the basic features of mockldap.
         """
-        manager = ("cn=Manager,ou=example,o=test", {"userPassword": ["ldaptest"]})
-        alice = ("cn=alice,ou=example,o=test", {"userPassword": ["alicepw"]})
-        bob = ("cn=bob,ou=other,o=test", {"userPassword": ["bobpw"]})
+        top = ('o=test', {'o': 'test'})
+        example = ('ou=example,o=test', {'ou': 'example'})
+        other = ('ou=other,o=test', {'ou': 'other'})
+        manager = ('cn=manager,ou=example,o=test', {'cn': 'manager', 'userPassword': ['ldaptest']})
+        alice = ('cn=alice,ou=example,o=test', {'cn': 'alice', 'userPassword': ['alicepw']})
+        bob = ('cn=bob,ou=other,o=test', {'cn': 'bob', 'userPassword': ['bobpw']})
 
         # This is the content of our mock LDAP directory. It takes the form
         # {dn: {attr: [value, ...], ...}, ...}.
-        directory = dict([manager, alice, bob])
+        directory = dict([top, example, other, manager, alice, bob])
 
         @classmethod
         def setUpClass(cls):
@@ -44,24 +48,28 @@ Example
             # pass in will be used for all LDAP connections.
             cls.mockldap = MockLdap(cls.directory)
 
+        @classmethod
+        def tearDownClass(cls):
+            del cls.mockldap
+
         def setUp(self):
             # Patch ldap.initialize
             self.mockldap.start()
+            self.ldapobj = self.mockldap['ldap://localhost/']
 
         def tearDown(self):
             # Stop patching ldap.initialize and reset state.
             self.mockldap.stop()
+            del self.ldapobj
 
         def test_some_ldap(self):
             """
             Some LDAP operations, including binds and simple searches, can be
             mimicked.
             """
-            ldapobj = self.mockldap['ldap://localhost/']
-
             results = _do_simple_ldap_search()
 
-            self.assertEquals(ldapobj.methods_called(), ['initialize', 'simple_bind_s', 'search_s'])
+            self.assertEquals(self.ldapobj.methods_called(), ['initialize', 'simple_bind_s', 'search_s'])
             self.assertEquals(sorted(results), sorted([self.manager, self.alice]))
 
         def test_complex_search(self):
@@ -70,12 +78,11 @@ Example
             If you're doing anything nontrivial, you have to set an explicit
             return value for a set of parameters.
             """
-            ldapobj = self.mockldap['ldap://localhost/']
-            ldapobj.search_s.seed('o=test', ldap.SCOPE_SUBTREE, '(|(cn=bob)(cn=alice))')([self.alice, self.bob])
+            self.ldapobj.search_s.seed('o=test', ldap.SCOPE_SUBTREE, '(|(cn=b*b)(cn=a*e))')([self.alice, self.bob])
 
             results = _do_complex_ldap_search()
 
-            self.assertEquals(ldapobj.methods_called(), ['initialize', 'simple_bind_s', 'search_s'])
+            self.assertEquals(self.ldapobj.methods_called(), ['initialize', 'simple_bind_s', 'search_s'])
             self.assertEquals(sorted(results), sorted([self.alice, self.bob]))
 
 
@@ -90,6 +97,6 @@ Example
     def _do_complex_ldap_search():
         conn = ldap.initialize('ldap://localhost/')
         conn.simple_bind_s('cn=alice,ou=example,o=test', 'alicepw')
-        results = conn.search_s('o=test', ldap.SCOPE_SUBTREE, '(|(cn=bob)(cn=alice))')
+        results = conn.search_s('o=test', ldap.SCOPE_SUBTREE, '(|(cn=b*b)(cn=a*e))')
 
         return results

@@ -26,6 +26,8 @@ class LDAPObject(RecordableMethods):
     counterparts. Some are self-explanatory; those that are only partially
     implemented are documented as such.
 
+    Ignore the *static* annotations; that's just a Sphinx artifact.
+
     .. attribute:: options
 
         *dict*: Options that have been set by
@@ -85,12 +87,9 @@ class LDAPObject(RecordableMethods):
             raise ldap.INVALID_CREDENTIALS('%s:%s' % (who, cred))
 
     @recorded
-    def search(self, base, scope, filterstr='(objectClass=*)',
-               attrlist=None, attrsonly=0):
+    def search(self, base, scope, filterstr='(objectClass=*)', attrlist=None, attrsonly=0):
         """
-        Implements searching with simple filters of the form (attr=value),
-        where value can be a string or \*. attrlist and attrsonly are also
-        supported. Beyond that, this method must be seeded.
+        See :meth:`~mockldap.LDAPObject.search_s`.
         """
         value = self._search_s(base, scope, filterstr, attrlist, attrsonly)
 
@@ -103,12 +102,12 @@ class LDAPObject(RecordableMethods):
         return ldap.RES_SEARCH_RESULT, self._pop_async_result(msgid)
 
     @recorded
-    def search_s(self, base, scope, filterstr='(objectClass=*)',
-                 attrlist=None, attrsonly=0):
+    def search_s(self, base, scope, filterstr='(objectClass=*)', attrlist=None, attrsonly=0):
         """
-        Implements searching with simple filters of the form (attr=value),
-        where value can be a string or \*. attrlist and attrsonly are also
-        supported. Beyond that, this method must be seeded.
+        Supports many, but not all, filter strings. Tests of the form
+        ``'(foo=bar)'`` and ``'(foo=*)'`` are supported, as are the &, |, and !
+        operators. attrlist and attrsonly are also supported. Beyond that, this
+        method must be seeded.
         """
         return self._search_s(base, scope, filterstr, attrlist, attrsonly)
 
@@ -189,17 +188,14 @@ class LDAPObject(RecordableMethods):
         # Find directory entries within the requested scope
         base_parts = ldap.dn.explode_dn(base)
         base_len = len(base_parts)
-        dn_parts = dict((dn, ldap.dn.explode_dn(dn)) for dn in
-                        self.directory.iterkeys())
+        dn_parts = dict((dn, ldap.dn.explode_dn(dn)) for dn in self.directory.iterkeys())
 
         if scope == ldap.SCOPE_BASE:
             dns = iter([base])
         elif scope == ldap.SCOPE_ONELEVEL:
-            dns = (dn for dn, parts in dn_parts.iteritems()
-                   if parts[1:] == base_parts)
+            dns = (dn for dn, parts in dn_parts.iteritems() if parts[1:] == base_parts)
         elif scope == ldap.SCOPE_SUBTREE:
-            dns = (dn for dn, parts in dn_parts.iteritems()
-                   if parts[-base_len:] == base_parts)
+            dns = (dn for dn, parts in dn_parts.iteritems() if parts[-base_len:] == base_parts)
         else:
             raise ValueError(u"Unrecognized scope: {0}".format(scope))
 
@@ -214,8 +210,7 @@ class LDAPObject(RecordableMethods):
 
         # Apply attribute filtering, if any
         if attrlist is not None:
-            results = ((dn, dict((attr, values) for attr, values in
-                                 attrs.iteritems() if attr in attrlist))
+            results = ((dn, dict((attr, values) for attr, values in attrs.iteritems() if attr in attrlist))
                        for dn, attrs in results)
 
         if attrsonly:
