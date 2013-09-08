@@ -10,6 +10,10 @@ except ImportError:
 import ldap
 import ldap.modlist
 import ldap.filter
+try:
+    import passlib
+except ImportError:
+    passlib = None
 
 from . import MockLdap
 from .filter import ParserError
@@ -95,16 +99,19 @@ class TestLDAPObject(unittest.TestCase):
 
         self.assertEqual(result, (97, []))
 
+    @unittest.skipIf(not passlib, "passlib needs to be installed")
     def test_simple_bind_s_success_crypt_password(self):
         result = self.ldapobj.simple_bind_s("cn=theo,ou=example,o=test", "theopw")
 
         self.assertEqual(result, (97, []))
 
+    @unittest.skipIf(not passlib, "passlib needs to be installed")
     def test_simple_bind_s_success_crypt_secondary_password(self):
         result = self.ldapobj.simple_bind_s("cn=theo,ou=example,o=test", "theopw2")
 
         self.assertEqual(result, (97, []))
 
+    @unittest.skipIf(not passlib, "passlib needs to be installed")
     def test_simple_bind_s_fail_crypt_password(self):
         with self.assertRaises(ldap.INVALID_CREDENTIALS):
             self.ldapobj.simple_bind_s("cn=theo,ou=example,o=test", "theopw3")
