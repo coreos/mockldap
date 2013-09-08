@@ -175,3 +175,7 @@ pseudoxml:
 	$(SPHINXBUILD) -b pseudoxml $(ALLSPHINXOPTS) $(BUILDDIR)/pseudoxml
 	@echo
 	@echo "Build finished. The pseudo-XML files are in $(BUILDDIR)/pseudoxml."
+
+zip:
+	rm $(BUILDDIR)/html.zip || true
+	cd $(BUILDDIR)/html && zip -R ../html.zip '*' -x .buildinfo -x '_sources/*'
