@@ -2,6 +2,14 @@
 
 from setuptools import setup
 
+try:
+    import unittest2
+except ImportError:
+    test_loader = 'unittest:TestLoader'
+else:
+    test_loader = 'unittest2:TestLoader'
+
+
 setup(
     name='mockldap',
     version='0.1',
@@ -36,5 +44,6 @@ setup(
     setup_requires=[
         'setuptools>=0.6c11',
     ],
+    test_loader=test_loader,
     test_suite='mockldap.tests',
 )
