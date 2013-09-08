@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='mockldap',
-    version='0.1.0',
+    version='0.1',
     description=u"A simple mock implementation of python-ldap.",
     long_description=open('README').read(),
     url='http://bitbucket.org/psagers/mockldap/',
@@ -14,7 +14,7 @@ setup(
     packages=['mockldap'],
     package_dir={'': 'src/'},
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
         'Programming Language :: Python',
         'Intended Audience :: Developers',
