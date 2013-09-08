@@ -3,7 +3,7 @@
 from setuptools import setup
 
 try:
-    import unittest2
+    import unittest2  # noqa
 except ImportError:
     test_loader = 'unittest:TestLoader'
 else:
@@ -12,7 +12,7 @@ else:
 
 setup(
     name='mockldap',
-    version='0.1',
+    version='0.1.1',
     description=u"A simple mock implementation of python-ldap.",
     long_description=open('README').read(),
     url='http://bitbucket.org/psagers/mockldap/',

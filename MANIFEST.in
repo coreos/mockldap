@@ -1,4 +1,4 @@
-include LICENSE
+include README LICENSE CHANGES
 include docs/Makefile
 include docs/source/*.py
 include docs/source/*.rst
