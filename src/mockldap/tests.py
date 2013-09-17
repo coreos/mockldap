@@ -86,8 +86,8 @@ class TestLDAPObject(unittest.TestCase):
 
         self.assertEqual(result, (97, []))
 
-    def test_simple_bind_s_raise_no_such_object(self):
-        with self.assertRaises(ldap.NO_SUCH_OBJECT):
+    def test_simple_bind_s_fail_login_with_invalid_username(self):
+        with self.assertRaises(ldap.INVALID_CREDENTIALS):
             self.ldapobj.simple_bind_s("cn=blah,o=test", "password")
 
     def test_simple_bind_s_fail_login(self):

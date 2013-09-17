@@ -75,10 +75,13 @@ class LDAPObject(RecordableMethods):
         """
         success = False
 
-        if(who == '' and cred == ''):
-            success = True
-        elif self._compare_s(who, 'userPassword', cred):
-            success = True
+        try:
+            if(who == '' and cred == ''):
+                success = True
+            elif self._compare_s(who, 'userPassword', cred):
+                success = True
+        except ldap.NO_SUCH_OBJECT:
+            pass
 
         if success:
             self.bound_as = who
