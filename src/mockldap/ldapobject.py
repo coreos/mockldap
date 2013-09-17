@@ -205,7 +205,7 @@ class LDAPObject(RecordableMethods):
         # Apply the filter expression
         try:
             filter_expr = parse(filterstr)
-        except UnsupportedOp as e:
+        except UnsupportedOp, e:
             raise SeedRequired(e)
 
         results = ((dn, self.directory[dn]) for dn in dns

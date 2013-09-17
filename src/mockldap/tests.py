@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, with_statement
 
 from copy import copy
 from doctest import DocTestSuite
@@ -152,7 +152,7 @@ class TestLDAPObject(unittest.TestCase):
     def test_search_s_escaped(self):
         escaped = ldap.filter.escape_filter_chars('alicepw', 2)
         results = self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL,
-                                        '(userPassword={0})'.format(escaped))
+                                        '(userPassword=%s)' % (escaped,))
 
         self.assertEqual(results, [alice])
 

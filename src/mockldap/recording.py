@@ -109,7 +109,7 @@ class RecordedMethod(object):
         self._record(args, kwargs)
 
         try:
-            value = next(self._seeded_values(args, kwargs))[1]
+            value = self._seeded_values(args, kwargs).next()[1]
         except StopIteration:
             value = self.func(self.instance, *args, **kwargs)
         else:

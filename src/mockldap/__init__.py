@@ -75,7 +75,7 @@ class MockLdap(object):
         from mock import patch
 
         if path in self.patchers:
-            raise ValueError("{0!r} is already patched.".format(path))
+            raise ValueError("%r is already patched." % (path,))
 
         if self.ldap_objects is None:
             ldap_objects = map_values(LDAPObject, self.directories)
@@ -103,7 +103,7 @@ class MockLdap(object):
         to stop, we'll reset all :class:`~mockldap.LDAPObject` instances.
         """
         if path not in self.patchers:
-            raise ValueError("{0!r} is not patched.".format(path))
+            raise ValueError("%r is not patched." % (path,))
 
         self.patchers[path].stop()
         del self.patchers[path]
