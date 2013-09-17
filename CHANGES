@@ -1,3 +1,11 @@
+v0.1.2 - September 17, 2013 - Fix simple_bind_s exception
+---------------------------------------------------------
+
+- simple_bind_s now raises :exc:`~ldap.INVALID_CREDENTIALS` instead of
+  :exc:`~ldap.NO_SUCH_OBJECT` if the DN does not exist. This is consistent with
+  the behavior of python-ldap.
+
+
 v0.1.1 - September 8, 2013 - Setup fixes
 ----------------------------------------
 
