@@ -4,7 +4,6 @@ from copy import deepcopy
 
 import ldap
 import ldap.dn
-import re
 
 try:
     from passlib.hash import ldap_md5_crypt
@@ -216,7 +215,7 @@ class LDAPObject(RecordableMethods):
         try:
             filter_expr = parse(filterstr)
         except UnsupportedOp, e:
-            raise SeedRequired(e)
+            raise SeedRequired("Unable to process filterstr '%s': %s" % (filterstr, e))
 
         results = ((dn, self.directory[dn]) for dn in dns
                    if filter_expr.matches(dn, self.directory[dn]))

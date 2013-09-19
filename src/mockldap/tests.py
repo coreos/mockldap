@@ -186,6 +186,16 @@ class TestLDAPObject(unittest.TestCase):
             self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL,
                                   '(invalid~=bogus)')
 
+    def test_useful_seed_required_message(self):
+        filterstr = '(invalid~=bogus)'
+        try:
+            self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL,
+                                  filterstr)
+        except SeedRequired, e:
+            self.assertTrue(filterstr in str(e))
+        else:
+            self.fail("Expected SeedRequired exception")
+
     def test_search_s_get_items_that_have_userpassword_set(self):
         results = self.ldapobj.search_s(
             "ou=example,o=test", ldap.SCOPE_ONELEVEL, '(userPassword=*)')
