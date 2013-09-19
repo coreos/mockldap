@@ -2,14 +2,11 @@
 Simple filter expression parser based on funcparserlib.
 """
 from functools import partial
+import ldap
 import re
 
 from funcparserlib.parser import (a, skip, oneplus, finished,
                                   with_forward_decls, NoParseError)
-
-
-class ParserError(Exception):
-    pass
 
 
 class UnsupportedOp(Exception):
@@ -114,7 +111,7 @@ class Test(Token):
         match = self.TEST_RE.match(self.content)
 
         if match is None:
-            raise ParserError(u"Failed to parse filter item '%s' at pos %d" % (self.content, self.start))
+            raise ldap.FILTER_ERROR(u"Failed to parse filter item '%s' at pos %d" % (self.content, self.start))
 
         self.attr, self.op, self.value = match.groups()
 
@@ -181,7 +178,7 @@ def parse(filterstr):
     try:
         return ldap_filter.parse(tokenize(filterstr))
     except NoParseError, e:
-        raise ParserError(e)
+        raise ldap.FILTER_ERROR(e)
 
 
 #

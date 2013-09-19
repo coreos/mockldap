@@ -16,7 +16,6 @@ except ImportError:
     passlib = None
 
 from . import MockLdap
-from .filter import ParserError
 from .recording import SeedRequired
 
 
@@ -161,12 +160,12 @@ class TestLDAPObject(unittest.TestCase):
         self.assertEqual(results, [alice])
 
     def test_search_s_unparsable_filterstr(self):
-        with self.assertRaises(ParserError):
+        with self.assertRaises(ldap.FILTER_ERROR):
             self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL,
                                   'invalid=*')
 
     def test_search_s_unparsable_filterstr_test(self):
-        with self.assertRaises(ParserError):
+        with self.assertRaises(ldap.FILTER_ERROR):
             self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL,
                                   '(invalid=)')
 
