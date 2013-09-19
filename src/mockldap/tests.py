@@ -116,6 +116,10 @@ class TestLDAPObject(unittest.TestCase):
         with self.assertRaises(ldap.INVALID_CREDENTIALS):
             self.ldapobj.simple_bind_s("cn=theo,ou=example,o=test", "theopw3")
 
+    def test_simple_bind_s_invalid_dn(self):
+        with self.assertRaises(ldap.INVALID_DN_SYNTAX):
+            self.ldapobj.simple_bind_s('invalid', 'invalid')
+
     def test_search_s_get_directory_items_with_scope_onelevel(self):
         results = self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL)
 
@@ -237,6 +241,10 @@ class TestLDAPObject(unittest.TestCase):
 
         self.assertEqual(results, [])
 
+    def test_search_s_invalid_dn(self):
+        with self.assertRaises(ldap.INVALID_DN_SYNTAX):
+            self.ldapobj.search_s("invalid", ldap.SCOPE_SUBTREE)
+
     def test_start_tls_s_disabled_by_default(self):
         self.assertEqual(self.ldapobj.tls_enabled, False)
 
@@ -265,6 +273,10 @@ class TestLDAPObject(unittest.TestCase):
                                         'objectClass', 'invalid')
 
         self.assertEqual(result, 0)
+
+    def test_compare_s_invalid_dn(self):
+        with self.assertRaises(ldap.INVALID_DN_SYNTAX):
+            self.ldapobj.compare_s('invalid', 'invalid', 'invalid')
 
     def test_add_s_success_code(self):
         dn = 'cn=mike,ou=example,o=test'
@@ -299,6 +311,18 @@ class TestLDAPObject(unittest.TestCase):
         with self.assertRaises(ldap.ALREADY_EXISTS):
             self.ldapobj.add_s(alice[0], ldif)
         self.assertNotEqual(self.ldapobj.directory[alice[0]], attrs)
+
+    def test_add_s_invalid_dn(self):
+        dn = 'invalid'
+        attrs = {
+            'objectClass': ['top', 'organizationalRole'],
+            'cn': ['mike'],
+            'userPassword': ['mikepw'],
+        }
+        ldif = ldap.modlist.addModlist(attrs)
+
+        with self.assertRaises(ldap.INVALID_DN_SYNTAX):
+            self.ldapobj.add_s(dn, ldif)
 
     def test_modify_s_undefined_type(self):
         mod_list = [(ldap.MOD_REPLACE, 'invalid', 'test')]
@@ -405,6 +429,12 @@ class TestLDAPObject(unittest.TestCase):
         self.assertNotIn('objectClass',
                          self.ldapobj.directory[manager[0]].keys())
 
+    def test_modify_s_invalid_dn(self):
+        mod_list = [(ldap.MOD_DELETE, 'objectClass', None)]
+
+        with self.assertRaises(ldap.INVALID_DN_SYNTAX):
+            self.ldapobj.modify_s('invalid', mod_list)
+
     def test_rename_s_successful_code(self):
         result = self.ldapobj.rename_s('cn=alice,ou=example,o=test', 'uid=alice1')
 
@@ -459,6 +489,19 @@ class TestLDAPObject(unittest.TestCase):
         self.assertRaises(ldap.NO_SUCH_OBJECT, self.ldapobj.rename_s,
                           'uid=invalid,ou=example,o=test', 'uid=invalid2')
 
+    def test_rename_s_invalid_dn(self):
+        with self.assertRaises(ldap.INVALID_DN_SYNTAX):
+            self.ldapobj.rename_s('invalid', 'uid=blah')
+
+    def test_rename_s_invalid_newrdn(self):
+        with self.assertRaises(ldap.INVALID_DN_SYNTAX):
+            self.ldapobj.rename_s('uid=something,ou=example,o=test', 'invalid')
+
+    def test_rename_s_invalid_newsuperior(self):
+        with self.assertRaises(ldap.INVALID_DN_SYNTAX):
+            self.ldapobj.rename_s('uid=alice,ou=example,o=test', 'cn=alice',
+                                  'invalid')
+
     def test_delete_s_success_code(self):
         self.assertEqual(self.ldapobj.delete_s(alice[0]), (107, []))
 
@@ -470,6 +513,10 @@ class TestLDAPObject(unittest.TestCase):
     def test_delete_s_no_such_object(self):
         with self.assertRaises(ldap.NO_SUCH_OBJECT):
             self.ldapobj.delete_s('uid=invalid,ou=example,o=test')
+
+    def test_delete_s_invalid_dn(self):
+        with self.assertRaises(ldap.INVALID_DN_SYNTAX):
+            self.ldapobj.delete_s('invalid')
 
     def test_unbind(self):
         self.ldapobj.simple_bind_s(alice[0], 'alicepw')

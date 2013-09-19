@@ -4,6 +4,7 @@ from copy import deepcopy
 
 import ldap
 import ldap.dn
+import re
 
 try:
     from passlib.hash import ldap_md5_crypt
@@ -47,6 +48,12 @@ class LDAPObject(RecordableMethods):
         self.options = {}
         self.tls_enabled = False
         self.bound_as = None
+
+    def _check_valid_dn(self, dn):
+        try:
+            ldap.dn.str2dn(dn)
+        except ldap.DECODING_ERROR:
+            raise ldap.INVALID_DN_SYNTAX
 
     #
     # Begin LDAP methods
@@ -167,6 +174,7 @@ class LDAPObject(RecordableMethods):
     #
 
     def _compare_s(self, dn, attr, value):
+        self._check_valid_dn(dn)
         try:
             if attr not in self.directory[dn]:
                 raise ldap.UNDEFINED_TYPE
@@ -185,8 +193,10 @@ class LDAPObject(RecordableMethods):
     def _search_s(self, base, scope, filterstr, attrlist, attrsonly):
         from .filter import parse, UnsupportedOp
 
+        self._check_valid_dn(base)
+
         if base not in self.directory:
-            raise ldap.NO_SUCH_OBJECT()
+            raise ldap.NO_SUCH_OBJECT
 
         # Find directory entries within the requested scope
         base_parts = ldap.dn.explode_dn(base)
@@ -223,6 +233,8 @@ class LDAPObject(RecordableMethods):
         return list(results)
 
     def _modify_s(self, dn, mod_attrs):
+        self._check_valid_dn(dn)
+
         for item in mod_attrs:
             op, key, value = item
             try:
@@ -258,6 +270,8 @@ class LDAPObject(RecordableMethods):
         return (103, [])
 
     def _add_s(self, dn, record):
+        self._check_valid_dn(dn)
+
         entry = {}
         dn = str(dn)
         for item in record:
@@ -270,6 +284,11 @@ class LDAPObject(RecordableMethods):
             return (105, [], len(self.methods_called()), [])
 
     def _rename_s(self, dn, newrdn, newsuperior):
+        self._check_valid_dn(dn)
+        self._check_valid_dn(newrdn)
+        if newsuperior:
+            self._check_valid_dn(newsuperior)
+
         try:
             entry = self.directory[dn]
         except KeyError:
@@ -301,6 +320,8 @@ class LDAPObject(RecordableMethods):
         return (109, [])
 
     def _delete_s(self, dn):
+        self._check_valid_dn(dn)
+
         try:
             del self.directory[dn]
         except KeyError:
