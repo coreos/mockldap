@@ -111,12 +111,14 @@ class RecordedMethod(object):
         try:
             value = self._seeded_values(args, kwargs).next()[1]
         except StopIteration:
-            value = self.func(self.instance, *args, **kwargs)
+            try:
+                value = self.func(self.instance, *args, **kwargs)
+            except SeedRequired, e:
+                raise SeedRequired("Seed required for %s: %s" %
+                                   (self._call_repr(*args, **kwargs), e))
         else:
-            if isinstance(value, Exception):
+            if self._is_exception(value):
                 raise value
-            elif (isinstance(value, types.TypeType) and issubclass(value, Exception)):
-                raise value()
 
         return deepcopy(value)
 
@@ -173,3 +175,18 @@ class RecordedMethod(object):
     @property
     def _recorded_calls(self):
         return self.instance._recorded_calls
+
+    def _call_repr(self, *args, **kwargs):
+        arglist = [repr(arg) for arg in args]
+        arglist.extend('%s=%r' % item for item in kwargs.iteritems())
+
+        return "%s(%s)" % (self.func.__name__, ", ".join(arglist))
+
+    def _is_exception(self, value):
+        if isinstance(value, Exception):
+            return True
+
+        if (isinstance(value, types.TypeType) and issubclass(value, Exception)):
+            return True
+
+        return False

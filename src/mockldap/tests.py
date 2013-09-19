@@ -189,9 +189,9 @@ class TestLDAPObject(unittest.TestCase):
         filterstr = '(invalid~=bogus)'
         try:
             self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL,
-                                  filterstr)
+                                  filterstr, attrlist=['ou'])
         except SeedRequired, e:
-            self.assertTrue(filterstr in str(e))
+            self.assertIn("search_s('ou=example,o=test', 1, '(invalid~=bogus)', attrlist=['ou']", str(e))
         else:
             self.fail("Expected SeedRequired exception")
 
