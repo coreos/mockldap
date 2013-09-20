@@ -113,10 +113,11 @@ class LDAPObject(RecordableMethods):
     @recorded
     def search_s(self, base, scope, filterstr='(objectClass=*)', attrlist=None, attrsonly=0):
         """
-        Supports many, but not all, filter strings. Tests of the form
-        ``'(foo=bar)'`` and ``'(foo=*)'`` are supported, as are the &, |, and !
-        operators. attrlist and attrsonly are also supported. Beyond that, this
-        method must be seeded.
+        Supports many, but not all, filter strings.
+
+        Tests of the form ``'(foo=bar)'`` and ``'(foo=*)'`` are supported, as
+        are the &, |, and !  operators. attrlist and attrsonly are also
+        supported. Beyond that, this method must be seeded.
         """
         return self._search_s(base, scope, filterstr, attrlist, attrsonly)
 

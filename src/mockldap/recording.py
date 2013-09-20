@@ -13,7 +13,8 @@ class SeedRequired(Exception):
     An API call must be seeded with a return value.
 
     This is raised by :class:`~mockldap.LDAPObject` methods when they can't
-    satisfy a request internally.
+    satisfy a request internally. The messsage will contain a representation of
+    the method call that triggered it, including all arguments.
     """
     pass
 
