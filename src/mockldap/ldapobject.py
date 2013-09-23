@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from copy import deepcopy
 
 import ldap
+from ldap.cidict import cidict
 import ldap.dn
 
 try:
@@ -16,7 +17,7 @@ from .recording import SeedRequired, RecordableMethods, recorded
 class LDAPObject(RecordableMethods):
     """
     :param directory: The initial content of this LDAP connection.
-    :type directory: ``{dn: {attr: [values]}}``
+    :type directory: :class:`ldap.cidict.cidict`: ``{dn: {attr: [values]}}``
 
     Our mock replacement for :class:`ldap.LDAPObject`. This exports selected
     LDAP operations and allows you to set return values in advance as well as
@@ -42,7 +43,11 @@ class LDAPObject(RecordableMethods):
         *string*: DN of the last successful bind. None if unbound.
     """
     def __init__(self, directory):
-        self.directory = ldap.cidict.cidict(deepcopy(directory))
+        if not isinstance(directory, ldap.cidict.cidict):
+            from . import map_keys
+            directory = cidict(map_keys(lambda s: s.lower(), directory))
+
+        self.directory = deepcopy(directory)
         self.async_results = []
         self.options = {}
         self.tls_enabled = False
@@ -115,8 +120,8 @@ class LDAPObject(RecordableMethods):
         """
         Supports many, but not all, filter strings.
 
-        Tests of the form ``'(foo=bar)'`` and ``'(foo=*)'`` are supported, as
-        are the &, |, and !  operators. attrlist and attrsonly are also
+        Tests of the form ``'(foo=bar)'`` and ``'(foo=\*)'`` are supported, as
+        are the &, \|, and !  operators. attrlist and attrsonly are also
         supported. Beyond that, this method must be seeded.
         """
         return self._search_s(base, scope, filterstr, attrlist, attrsonly)
@@ -188,7 +193,8 @@ class LDAPObject(RecordableMethods):
                         return 1
                 except (NameError, ValueError):
                     pass
-        return (value in self.directory[dn][attr]) and 1 or 0
+
+        return (1 if (value in self.directory[dn][attr]) else 0)
 
     def _search_s(self, base, scope, filterstr, attrlist, attrsonly):
         from .filter import parse, UnsupportedOp
@@ -199,12 +205,12 @@ class LDAPObject(RecordableMethods):
             raise ldap.NO_SUCH_OBJECT
 
         # Find directory entries within the requested scope
-        base_parts = ldap.dn.explode_dn(base)
+        base_parts = ldap.dn.explode_dn(base.lower())
         base_len = len(base_parts)
         dn_parts = dict((dn, ldap.dn.explode_dn(dn)) for dn in self.directory.iterkeys())
 
         if scope == ldap.SCOPE_BASE:
-            dns = iter([base])
+            dns = (dn for dn, parts in dn_parts.iteritems() if parts == base_parts)
         elif scope == ldap.SCOPE_ONELEVEL:
             dns = (dn for dn, parts in dn_parts.iteritems() if parts[1:] == base_parts)
         elif scope == ldap.SCOPE_SUBTREE:

@@ -66,6 +66,13 @@ class TestLDAPObject(unittest.TestCase):
     def tearDown(self):
         self.mockldap.stop()
 
+    def test_manual_ldapobject(self):
+        from .ldapobject import LDAPObject
+
+        ldapobj = LDAPObject(directory)
+
+        self.assertIsInstance(ldapobj.directory, ldap.cidict.cidict)
+
     def test_set_option(self):
         self.ldapobj.set_option(ldap.OPT_X_TLS_DEMAND, True)
         self.assertEqual(self.ldapobj.get_option(ldap.OPT_X_TLS_DEMAND), True)
@@ -134,6 +141,11 @@ class TestLDAPObject(unittest.TestCase):
 
         self.assertEqual(results, [alice])
 
+    def test_search_s_base_case_insensitive(self):
+        results = self.ldapobj.search_s('cn=ALICE,ou=Example,o=TEST', ldap.SCOPE_BASE)
+
+        self.assertEquals(results, [alice])
+
     def test_search_s_get_specific_attr(self):
         results = self.ldapobj.search_s("cn=alice,ou=example,o=test", ldap.SCOPE_BASE,
                                         attrlist=["userPassword"])
@@ -184,6 +196,12 @@ class TestLDAPObject(unittest.TestCase):
         with self.assertRaises(SeedRequired):
             self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL,
                                   '(invalid~=bogus)')
+
+    def test_search_async(self):
+        msgid = self.ldapobj.search("cn=alice,ou=example,o=test", ldap.SCOPE_BASE)
+        results = self.ldapobj.result(msgid)
+
+        self.assertEqual(results, (ldap.RES_SEARCH_RESULT, [alice]))
 
     def test_useful_seed_required_message(self):
         filterstr = '(invalid~=bogus)'

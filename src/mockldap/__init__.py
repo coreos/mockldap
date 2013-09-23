@@ -1,5 +1,7 @@
 from collections import defaultdict
 
+from ldap.cidict import cidict
+
 from .ldapobject import LDAPObject
 from .recording import SeedRequired  # noqa
 
@@ -46,7 +48,7 @@ class MockLdap(object):
         if self.ldap_objects is not None:
             raise Exception("You can't add a directory after calling start().")
 
-        self.directories[uri] = directory
+        self.directories[uri] = cidict(map_keys(lambda s: s.lower(), directory))
 
     def start(self, path='ldap.initialize'):
         """
@@ -133,5 +135,6 @@ class MockLdap(object):
         return ldap_object
 
 
-# Map a dictionary by applying a function to each value.
-map_values = lambda f, d: dict((k, f(v)) for k, v in d.items())
+# Map a dictionary by applying a function to each key/value.
+map_keys = lambda f, d: dict((f(k), v) for k, v in d.iteritems())
+map_values = lambda f, d: dict((k, f(v)) for k, v in d.iteritems())
