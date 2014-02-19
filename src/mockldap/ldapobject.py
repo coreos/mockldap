@@ -262,7 +262,7 @@ class LDAPObject(RecordableMethods):
                         entry[key].append(subvalue)
             elif op is ldap.MOD_DELETE:
                 if not value:
-                    del entry[key]
+                    entry[key] = []
                 else:
                     for subvalue in value:
                         if subvalue in entry[key]:
