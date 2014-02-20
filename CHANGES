@@ -1,3 +1,10 @@
+v0.1.5 - February 19, 2014 - Fix to modify_s
+--------------------------------------------
+
+- MOD_DELETE should not remove the key from the directory. Thanks to
+  https://bitbucket.org/jlec.
+
+
 v0.1.4 - September 20, 2013 - Miscellaneous fixes
 -------------------------------------------------
 
