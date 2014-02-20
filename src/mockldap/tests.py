@@ -453,8 +453,8 @@ class TestLDAPObject(unittest.TestCase):
 
         self.ldapobj.modify_s(manager[0], mod_list)
 
-        self.assertNotIn('objectClass',
-                         self.ldapobj.directory[manager[0]].keys())
+        self.assertEqual(self.ldapobj.directory[manager[0]]['objectClass'],
+                         [])
 
     def test_modify_s_invalid_dn(self):
         mod_list = [(ldap.MOD_DELETE, 'objectClass', None)]
