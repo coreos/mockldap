@@ -174,6 +174,12 @@ class LDAPObject(RecordableMethods):
         """
         self.bound_as = None
 
+    @recorded
+    def whoami_s(self):
+        """
+        """
+        return "dn:" + self.bound_as
+
     #
     # Internal implementations
     #

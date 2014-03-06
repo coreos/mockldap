@@ -557,6 +557,11 @@ class TestLDAPObject(unittest.TestCase):
 
         self.assertEqual(self.ldapobj.bound_as, None)
 
+    def test_whoami_s(self):
+        self.ldapobj.simple_bind_s(alice[0], 'alicepw')
+
+        self.assertEqual(self.ldapobj.whoami_s(), 'dn:cn=alice,ou=example,o=test')
+
 
 def initialize(*args, **kwargs):
     """ Dummy patch target for the tests below. """
