@@ -1,3 +1,10 @@
+v0.1.7 - March 7, 2014 - Filter string parser fix
+-------------------------------------------------
+
+- Filter strings with '&', '|', and '!' in the assertion values should now be
+  parsed correctly.
+
+
 v0.1.6 - March 6, 2014 - Add whoami_s
 -------------------------------------
 
