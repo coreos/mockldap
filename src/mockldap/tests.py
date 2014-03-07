@@ -258,6 +258,13 @@ class TestLDAPObject(unittest.TestCase):
 
         self.assertEqual(sorted(results), sorted([alice, manager]))
 
+    def test_search_s_filterstr_with_token_chars(self):
+        """ Make sure we can parse special chars in a filter string. """
+        self.ldapobj.search_s(
+            "ou=example,o=test", ldap.SCOPE_SUBTREE,
+            "(objectClass=a & b | c ! d)"
+        )
+
     def test_search_s_scope_base_no_such_object(self):
         with self.assertRaises(ldap.NO_SUCH_OBJECT):
             self.ldapobj.search_s("cn=blah,ou=example,o=test", ldap.SCOPE_BASE)

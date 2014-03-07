@@ -140,7 +140,15 @@ class Test(Token):
         return matches
 
 
-_atoms = map(re.escape, ['(', '&', '|', '!', ')'])
+# Tokens to pull out. The operators contain positive lookbehind assertions to
+# make sure that they're only matched after left parens.
+_atoms = [
+    r'\(',          # (
+    r'(?<=\()\&',   # &
+    r'(?<=\()\|',   # |
+    r'(?<=\()\!',   # !
+    r'\)',          # )
+]
 tokens_re = re.compile(r'(%s)' % r'|'.join(_atoms))
 
 
