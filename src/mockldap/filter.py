@@ -30,11 +30,11 @@ class Token(object):
     def __eq__(self, other):
         return self.code == other.code
 
-    def __unicode__(self):
-        return u"%d-%d: %s %r" % (self.start, self.stop, self.code, self.content)
+    def __str__(self):
+        return "%d-%d: %s %r" % (self.start, self.stop, self.code, self.content)
 
     def __repr__(self):
-        return u"%s(%r, %r, %r, %r)" % (self.__class__.__name__, self.code, self.content, self.start, self.stop)
+        return "%s(%r, %r, %r, %r)" % (self.__class__.__name__, self.code, self.content, self.start, self.stop)
 
     def matches(self, dn, attrs):
         raise NotImplementedError()
@@ -185,7 +185,7 @@ def gen_tokens(substrs):
 def parse(filterstr):
     try:
         return ldap_filter.parse(tokenize(filterstr))
-    except NoParseError, e:
+    except NoParseError as e:
         raise ldap.FILTER_ERROR(e)
 
 
@@ -226,4 +226,4 @@ if __name__ == '__main__':
 
     for filterstr in sys.argv[1:]:
         pprint(tokenize(filterstr))
-        print parse(filterstr).unparse()
+        print(parse(filterstr).unparse())

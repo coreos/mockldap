@@ -120,7 +120,7 @@ class MockLdap(object):
         If you called :meth:`~mockldap.MockLdap.start` multiple times, this is
         the easiest way to reset everything.
         """
-        for patcher in self.patchers.itervalues():
+        for patcher in self.patchers.values():
             patcher.stop()
 
         self.patchers.clear()
@@ -136,5 +136,5 @@ class MockLdap(object):
 
 
 # Map a dictionary by applying a function to each key/value.
-map_keys = lambda f, d: dict((f(k), v) for k, v in d.iteritems())
-map_values = lambda f, d: dict((k, f(v)) for k, v in d.iteritems())
+map_keys = lambda f, d: dict((f(k), v) for k, v in d.items())
+map_values = lambda f, d: dict((k, f(v)) for k, v in d.items())
