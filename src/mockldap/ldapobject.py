@@ -186,21 +186,21 @@ class LDAPObject(RecordableMethods):
 
     def _compare_s(self, dn, attr, value):
         self._check_valid_dn(dn)
+
         try:
-            if attr not in self.directory[dn]:
-                raise ldap.UNDEFINED_TYPE
+            values = self.directory[dn].get(attr, [])
         except KeyError:
             raise ldap.NO_SUCH_OBJECT
 
         if attr == 'userPassword':
-            for password in self.directory[dn][attr]:
+            for password in values:
                 try:
                     if ldap_md5_crypt.verify(value, password):
                         return 1
                 except (NameError, ValueError):
                     pass
 
-        return (1 if (value in self.directory[dn][attr]) else 0)
+        return (1 if (value in values) else 0)
 
     def _search_s(self, base, scope, filterstr, attrlist, attrsonly):
         from .filter import parse, UnsupportedOp
