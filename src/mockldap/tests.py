@@ -134,7 +134,7 @@ class TestLDAPObject(unittest.TestCase):
     def test_search_s_get_all_directory_items_with_scope_subtree(self):
         results = self.ldapobj.search_s("o=test", ldap.SCOPE_SUBTREE)
 
-        self.assertEqual(sorted(results), sorted(directory.iteritems()))
+        self.assertEqual(sorted(results), sorted(directory.items()))
 
     def test_search_s_get_specific_item_with_scope_base(self):
         results = self.ldapobj.search_s("cn=alice,ou=example,o=test", ldap.SCOPE_BASE)
@@ -208,7 +208,7 @@ class TestLDAPObject(unittest.TestCase):
         try:
             self.ldapobj.search_s("ou=example,o=test", ldap.SCOPE_ONELEVEL,
                                   filterstr, attrlist=['ou'])
-        except SeedRequired, e:
+        except SeedRequired as e:
             self.assertIn("search_s('ou=example,o=test', 1, '(invalid~=bogus)', attrlist=['ou']", str(e))
         else:
             self.fail("Expected SeedRequired exception")
@@ -605,7 +605,7 @@ class TestMockLdap(unittest.TestCase):
         self.mockldap.start('mockldap.tests.initialize')
         self.mockldap.stop()
 
-        self.assert_(self.mockldap[''] is not None)
+        self.assertTrue(self.mockldap[''] is not None)
 
     def test_stop_last(self):
         self.mockldap.start()
