@@ -249,33 +249,40 @@ class LDAPObject(RecordableMethods):
 
         for item in mod_attrs:
             op, key, value = item
+
             try:
-                if key not in self.directory[dn]:
-                    raise ldap.UNDEFINED_TYPE
+                entry = self.directory[dn]
             except KeyError:
                 raise ldap.NO_SUCH_OBJECT
 
-            entry = self.directory[dn]
-
-            if type(value) is str:
+            if value is None:
+                value = []
+            elif type(value) is str:
                 value = [value]
 
-            if op is ldap.MOD_ADD:
-                if not value:
+            if op == ldap.MOD_ADD:
+                if value == []:
                     raise ldap.PROTOCOL_ERROR
-                for subvalue in value:
-                    if subvalue not in entry[key]:
-                        entry[key].append(subvalue)
-            elif op is ldap.MOD_DELETE:
-                if not value:
-                    entry[key] = []
+
+                if key not in entry:
+                    entry[key] = value
                 else:
                     for subvalue in value:
-                        if subvalue in entry[key]:
-                            entry[key].remove(subvalue)
-            elif op is ldap.MOD_REPLACE:
-                if not value:
+                        if subvalue not in entry[key]:
+                            entry[key].append(subvalue)
+            elif op == ldap.MOD_DELETE:
+                if key not in entry:
+                    pass
+                elif value == []:
                     del entry[key]
+                else:
+                    entry[key] = [v for v in entry[key] if v not in value]
+                    if entry[key] == []:
+                        del entry[key]
+            elif op == ldap.MOD_REPLACE:
+                if value == []:
+                    if key in entry:
+                        del entry[key]
                 else:
                     entry[key] = value
 

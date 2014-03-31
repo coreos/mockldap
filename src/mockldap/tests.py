@@ -291,11 +291,6 @@ class TestLDAPObject(unittest.TestCase):
             self.ldapobj.compare_s('cn=blah,ou=example,o=test', 'objectClass',
                                    'top')
 
-    def test_compare_s_undefined_type(self):
-        with self.assertRaises(ldap.UNDEFINED_TYPE):
-            self.ldapobj.compare_s('cn=alice,ou=example,o=test', 'objectClass1',
-                                   'top')
-
     def test_compare_s_true(self):
         result = self.ldapobj.compare_s('cn=Manager,ou=example,o=test',
                                         'objectClass', 'top')
@@ -358,12 +353,6 @@ class TestLDAPObject(unittest.TestCase):
         with self.assertRaises(ldap.INVALID_DN_SYNTAX):
             self.ldapobj.add_s(dn, ldif)
 
-    def test_modify_s_undefined_type(self):
-        mod_list = [(ldap.MOD_REPLACE, 'invalid', 'test')]
-
-        with self.assertRaises(ldap.UNDEFINED_TYPE):
-            self.ldapobj.modify_s(alice[0], mod_list)
-
     def test_modify_s_no_such_object(self):
         mod_list = [(ldap.MOD_REPLACE, 'userPassword', 'test')]
 
@@ -424,6 +413,12 @@ class TestLDAPObject(unittest.TestCase):
         self.assertEqual(set(old_pw) | set(new_pw),
                          set(self.ldapobj.directory[alice[0]]['userPassword']))
 
+    def test_modify_s_create_on_add(self):
+        """ Create an attribute by adding the first value. """
+        self.ldapobj.modify_s(alice[0], [(ldap.MOD_ADD, 'someAttr', 'value')])
+
+        self.assertEqual(self.ldapobj.directory[alice[0]]['someAttr'], ['value'])
+
     def test_modify_s_add_none_value_raises_protocol_error(self):
         mod_list = [(ldap.MOD_ADD, 'userPassword', None)]
 
@@ -460,8 +455,15 @@ class TestLDAPObject(unittest.TestCase):
 
         self.ldapobj.modify_s(manager[0], mod_list)
 
-        self.assertEqual(self.ldapobj.directory[manager[0]]['objectClass'],
-                         [])
+        self.assertTrue('objectClass' not in self.ldapobj.directory[manager[0]])
+
+    def test_modify_s_delete_every_from_attribute(self):
+        """ Delete all values explicitly, which deletes the attributes. """
+        mod_list = [(ldap.MOD_DELETE, 'objectClass', manager[1]['objectClass'])]
+
+        self.ldapobj.modify_s(manager[0], mod_list)
+
+        self.assertTrue('objectClass' not in self.ldapobj.directory[manager[0]])
 
     def test_modify_s_invalid_dn(self):
         mod_list = [(ldap.MOD_DELETE, 'objectClass', None)]
