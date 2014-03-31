@@ -1,3 +1,17 @@
+v0.1.8 - March 31, 2014 - Fixes for modify_s
+--------------------------------------------
+
+- A previous fix to modify_s was erroneous. `section 4.6`_ of RFC 4511 states
+  that modify operations will create new attributes and delete empty ones as
+  necessary.
+
+.. _section 4.6: http://tools.ietf.org/html/rfc4511#section-4.6
+
+.. warning::
+
+    mockldap wil no longer raise `ldap.UNDEFINED_TYPE`. mockldap has no schema
+    support, so it assumes that all attributes are valid.
+
 v0.1.7 - March 7, 2014 - Filter string parser fix
 -------------------------------------------------
 
