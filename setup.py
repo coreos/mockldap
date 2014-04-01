@@ -3,6 +3,13 @@
 from setuptools import setup
 
 try:
+    import unittest.mock    # noqa
+except ImportError:
+    requires_mock = ['mock']
+else:
+    requires_mock = []
+
+try:
     import unittest2  # noqa
 except ImportError:
     test_loader = 'unittest:TestLoader'
@@ -36,8 +43,7 @@ setup(
     install_requires=[
         'python-ldap',
         'funcparserlib==0.3.6',
-        'mock',
-    ],
+    ] + requires_mock,
     extras_require={
         'passlib': ['passlib>=1.6.1'],
     },

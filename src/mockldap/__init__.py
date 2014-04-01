@@ -74,7 +74,10 @@ class MockLdap(object):
         then you need to call ``start('path.to.your.mod.initialize')``. See
         :ref:`where-to-patch` for more.
         """
-        from mock import patch
+        try:
+            from unittest.mock import patch
+        except ImportError:
+            from mock import patch
 
         if path in self.patchers:
             raise ValueError("%r is already patched." % (path,))
