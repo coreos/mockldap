@@ -1,3 +1,15 @@
+v0.2.0 - ... - Experimental Python 3 support
+--------------------------------------------
+
+- mockldap now provides experimental Python 3 support. Python 2.5 was dropped.
+
+  To sum up, mockldap works with Python 2.6, 2.7, 3.3 and 3.4.
+
+  Since python-ldap still isn't making progress toward Python 3, if you're
+  using Python 3, you need to install a fork::
+
+      $ pip install git+https://github.com/rbarrois/python-ldap.git@py3
+
 v0.1.8 - March 31, 2014 - Fixes for modify_s
 --------------------------------------------
 
