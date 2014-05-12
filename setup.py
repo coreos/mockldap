@@ -27,7 +27,7 @@ setup(
     author_email='psagers.pypi@ignorare.net',
     license='BSD',
     packages=['mockldap'],
-    package_dir={'': 'src/'},
+    package_dir={'': 'src'},
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
