@@ -1,5 +1,5 @@
-v0.2.0 - ... - Experimental Python 3 support
---------------------------------------------
+v0.2.0 - April 9, 2014 - Experimental Python 3 support
+------------------------------------------------------
 
 - mockldap now provides experimental Python 3 support. Python 2.5 was dropped.
 
@@ -9,6 +9,8 @@ v0.2.0 - ... - Experimental Python 3 support
   using Python 3, you need to install a fork::
 
       $ pip install git+https://github.com/rbarrois/python-ldap.git@py3
+
+  Thanks to `Aymeric Augustin <https://myks.org/en/>`_ for making this happen.
 
 v0.1.8 - March 31, 2014 - Fixes for modify_s
 --------------------------------------------
