@@ -525,6 +525,10 @@ class TestLDAPObject(unittest.TestCase):
         self.assertRaises(ldap.NO_SUCH_OBJECT, self.ldapobj.rename_s,
                           'uid=invalid,ou=example,o=test', 'uid=invalid2')
 
+    def test_rename_s_already_exists(self):
+        with self.assertRaises(ldap.ALREADY_EXISTS):
+            self.ldapobj.rename_s(alice[0], "cn=manager")
+
     def test_rename_s_invalid_dn(self):
         with self.assertRaises(ldap.INVALID_DN_SYNTAX):
             self.ldapobj.rename_s('invalid', 'uid=blah')
