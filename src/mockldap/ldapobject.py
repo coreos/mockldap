@@ -319,6 +319,9 @@ class LDAPObject(RecordableMethods):
             superior = ','.join(dn.split(',')[1:])
 
         newfulldn = '%s,%s' % (newrdn, superior)
+        if newfulldn in self.directory:
+            raise ldap.ALREADY_EXISTS
+
         oldattr, oldvalue = dn.split(',')[0].split('=')
         newattr, newvalue = newrdn.split('=')
 
