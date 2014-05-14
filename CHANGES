@@ -1,3 +1,10 @@
+v0.2.1 - May 13, 2014 - Fix for rename_s
+----------------------------------------
+
+- Raise ldap.ALREADY_EXISTS when renaming an object and the target already
+  exists.
+
+
 v0.2.0 - April 9, 2014 - Experimental Python 3 support
 ------------------------------------------------------
 
