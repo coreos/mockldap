@@ -1,3 +1,11 @@
+v0.2.2 - July 21, 2014 - Password hashing
+-----------------------------------------
+
+- Add support for {CRYPT} and {SSHA} passwords.
+
+  Thanks to `Dmitri Bogomolov <https://bitbucket.org/g1itch>`_.
+
+
 v0.2.1 - May 13, 2014 - Fix for rename_s
 ----------------------------------------
 
