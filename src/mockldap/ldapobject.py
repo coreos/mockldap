@@ -1,15 +1,14 @@
 from __future__ import absolute_import
 
+import re
+import crypt
+import hashlib
+
 from copy import deepcopy
 
 import ldap
 from ldap.cidict import cidict
 import ldap.dn
-
-try:
-    from passlib.hash import ldap_md5_crypt
-except ImportError:
-    pass
 
 from .recording import SeedRequired, RecordableMethods, recorded
 
@@ -195,10 +194,21 @@ class LDAPObject(RecordableMethods):
         if attr == 'userPassword':
             for password in values:
                 try:
-                    if ldap_md5_crypt.verify(value, password):
+                    scheme, raw = re.match(r'^{(.*)}(.*)', password).groups()
+                except AttributeError:
+                    if password == value:
                         return 1
-                except (NameError, ValueError):
-                    pass
+                    else:
+                        continue
+
+                if scheme == 'CRYPT' and crypt.crypt(value, raw[:4]) == raw:
+                    return 1
+                elif scheme == 'SSHA':
+                    decoded = raw.decode('base64')
+                    h = hashlib.sha1(value)
+                    h.update(decoded[-4:])
+                    if h.digest() == decoded[:-4]:
+                        return 1
 
         return (1 if (value in values) else 0)
 

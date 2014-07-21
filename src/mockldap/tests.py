@@ -10,10 +10,6 @@ except ImportError:
 import ldap
 import ldap.modlist
 import ldap.filter
-try:
-    import passlib
-except ImportError:
-    passlib = None
 
 from . import MockLdap
 from .recording import SeedRequired
@@ -29,9 +25,10 @@ manager = ("cn=manager,ou=example,o=test", {
 alice = ("cn=alice,ou=example,o=test", {
     "cn": ["alice"], "uid": ["alice"], "userPassword": ["alicepw"],
     "objectClass": ["top", "posixAccount"]})
+# Passwords generated with slappasswd
 theo = ("cn=theo,ou=example,o=test", {"userPassword": [
-    "{CRYPT}$1$95Aqvh4v$pXrmSqYkLg8XwbCb4b5/W/",
-    "{CRYPT}$1$G2delXmX$PVmuP3qePEtOYkZcMa2BB/"],
+    "{CRYPT}Q7BT9BT8qXW/k",
+    "{SSHA}ecL6T4anvrFI2ixn2XnrE0roM5TeoLLE"],
     "objectClass": ["top", "posixAccount"]})
 john = ("cn=john,ou=example,o=test", {"objectClass": ["top"]})
 
@@ -105,19 +102,16 @@ class TestLDAPObject(unittest.TestCase):
 
         self.assertEqual(result, (97, []))
 
-    @unittest.skipIf(not passlib, "passlib needs to be installed")
     def test_simple_bind_s_success_crypt_password(self):
         result = self.ldapobj.simple_bind_s("cn=theo,ou=example,o=test", "theopw")
 
         self.assertEqual(result, (97, []))
 
-    @unittest.skipIf(not passlib, "passlib needs to be installed")
     def test_simple_bind_s_success_crypt_secondary_password(self):
         result = self.ldapobj.simple_bind_s("cn=theo,ou=example,o=test", "theopw2")
 
         self.assertEqual(result, (97, []))
 
-    @unittest.skipIf(not passlib, "passlib needs to be installed")
     def test_simple_bind_s_fail_crypt_password(self):
         with self.assertRaises(ldap.INVALID_CREDENTIALS):
             self.ldapobj.simple_bind_s("cn=theo,ou=example,o=test", "theopw3")
