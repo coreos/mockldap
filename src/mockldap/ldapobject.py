@@ -1,10 +1,10 @@
 from __future__ import absolute_import
 
-import re
-import crypt
-import hashlib
-
+import base64
 from copy import deepcopy
+from crypt import crypt
+import hashlib
+import re
 
 import ldap
 from ldap.cidict import cidict
@@ -192,25 +192,41 @@ class LDAPObject(RecordableMethods):
             raise ldap.NO_SUCH_OBJECT
 
         if attr == 'userPassword':
-            for password in values:
-                try:
-                    scheme, raw = re.match(r'^{(.*)}(.*)', password).groups()
-                except AttributeError:
-                    if password == value:
-                        return 1
-                    else:
-                        continue
+            result = 1 if any(self._compare_password(value, candidate) for candidate in values) else 0
+        else:
+            result = (1 if (value in values) else 0)
 
-                if scheme == 'CRYPT' and crypt.crypt(value, raw[:4]) == raw:
-                    return 1
-                elif scheme == 'SSHA':
-                    decoded = raw.decode('base64')
-                    h = hashlib.sha1(value)
-                    h.update(decoded[-4:])
-                    if h.digest() == decoded[:-4]:
-                        return 1
+        return result
 
-        return (1 if (value in values) else 0)
+    PASSWORD_RE = re.compile(r'^{(.*?)}(.*)')
+
+    def _compare_password(self, password, value):
+        """
+        Compare a password to a (possibly hashed) attribute value.
+
+        This returns True iff ``password`` matches the given attribute value. A
+        limited set of LDAP password hashing schemes is supported; feel free to
+        add more if you need them.
+
+        """
+        match = self.PASSWORD_RE.match(value)
+
+        if match is not None:
+            scheme, raw = match.groups()
+
+            if scheme == 'CRYPT':
+                matches = (crypt(password, raw[:4]) == raw)
+            elif scheme == 'SSHA':
+                decoded = base64.b64decode(raw)
+                h = hashlib.sha1(password.encode('utf-8'))
+                h.update(decoded[-4:])
+                matches = (h.digest() == decoded[:-4])
+            else:
+                matches = False
+        else:
+            matches = (value == password)
+
+        return matches
 
     def _search_s(self, base, scope, filterstr, attrlist, attrsonly):
         from .filter import parse, UnsupportedOp

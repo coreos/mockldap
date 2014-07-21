@@ -51,7 +51,6 @@ setup(
         'funcparserlib==0.3.6',
     ] + requires_mock,
     extras_require={
-        'passlib': ['passlib>=1.6.1'],
     },
     setup_requires=[
         'setuptools>=0.6c11',
