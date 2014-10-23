@@ -2,7 +2,10 @@ from __future__ import absolute_import
 
 import base64
 from copy import deepcopy
-from crypt import crypt
+try:
+    from crypt import crypt
+except ImportError:
+    crypt = None
 import hashlib
 import re
 
@@ -214,7 +217,7 @@ class LDAPObject(RecordableMethods):
         if match is not None:
             scheme, raw = match.groups()
 
-            if scheme == 'CRYPT':
+            if crypt is not None and scheme == 'CRYPT':
                 matches = (crypt(password, raw[:4]) == raw)
             elif scheme == 'SSHA':
                 decoded = base64.b64decode(raw)
