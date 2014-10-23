@@ -1,3 +1,9 @@
+v0.2.3 - October 23, 2014 - Fix for Windows
+-------------------------------------------
+
+- Don't support {CRYPT} passwords if crypt can't be imported.
+
+
 v0.2.2 - July 21, 2014 - Password hashing
 -----------------------------------------
 
