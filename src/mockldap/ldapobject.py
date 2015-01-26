@@ -222,8 +222,8 @@ class LDAPObject(RecordableMethods):
             elif scheme == 'SSHA':
                 decoded = base64.b64decode(raw)
                 h = hashlib.sha1(password.encode('utf-8'))
-                h.update(decoded[-4:])
-                matches = (h.digest() == decoded[:-4])
+                h.update(decoded[h.digest_size:])
+                matches = (h.digest() == decoded[:h.digestsize])
             else:
                 matches = False
         else:

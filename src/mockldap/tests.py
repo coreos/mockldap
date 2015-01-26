@@ -28,7 +28,8 @@ alice = ("cn=alice,ou=example,o=test", {
 # Passwords generated with slappasswd
 theo = ("cn=theo,ou=example,o=test", {"userPassword": [
     "{CRYPT}Q7BT9BT8qXW/k",
-    "{SSHA}ecL6T4anvrFI2ixn2XnrE0roM5TeoLLE"],
+    "{SSHA}ecL6T4anvrFI2ixn2XnrE0roM5TeoLLE",
+    "{SSHA}/WoozYVlR2BXTCDCWpZG8+IqnF1GWhJbbCSVXQ=="],
     "objectClass": ["top", "posixAccount"]})
 john = ("cn=john,ou=example,o=test", {"objectClass": ["top"]})
 
@@ -109,6 +110,11 @@ class TestLDAPObject(unittest.TestCase):
 
     def test_simple_bind_s_success_crypt_secondary_password(self):
         result = self.ldapobj.simple_bind_s("cn=theo,ou=example,o=test", "theopw2")
+
+        self.assertEqual(result, (97, []))
+
+    def test_simple_bind_s_success_crypt_tertiary_password(self):
+        result = self.ldapobj.simple_bind_s("cn=theo,ou=example,o=test", "12345")
 
         self.assertEqual(result, (97, []))
 
