@@ -223,7 +223,7 @@ class LDAPObject(RecordableMethods):
                 decoded = base64.b64decode(raw)
                 h = hashlib.sha1(password.encode('utf-8'))
                 h.update(decoded[h.digest_size:])
-                matches = (h.digest() == decoded[:h.digestsize])
+                matches = (h.digest() == decoded[:h.digest_size])
             else:
                 matches = False
         else:
