@@ -1,3 +1,9 @@
+v0.2.4 - January 26, 2015 - SSHA fix
+------------------------------------
+
+- Support SSHA passwords with salt of arbitrary length.
+
+
 v0.2.3 - October 23, 2014 - Fix for Windows
 -------------------------------------------
 
